@@ -1,0 +1,9 @@
+{
+  "name": "Courier Collection App",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:22",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:1": {}
+  },
+  "forwardPorts": [4000],
+  "workspaceFolder": "/workspace"
+}
