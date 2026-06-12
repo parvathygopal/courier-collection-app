@@ -9,9 +9,9 @@ import { RouterProvider } from "react-router-dom";
 import { router } from "./routes.tsx";
 
 createRoot(document.getElementById("root")!).render(
-  <QueryClientProvider client={queryClient}>
-    <StrictMode>
+  <StrictMode>
+    <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />
-    </StrictMode>
-  </QueryClientProvider>,
+    </QueryClientProvider>
+  </StrictMode>,
 );
