@@ -23,6 +23,28 @@ a {
   text-decoration: none;
   color: inherit;
 }
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* App base styles */
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  @apply bg-gray-50 text-gray-800 antialiased;
+}
+
+.container {
+  @apply max-w-6xl mx-auto px-4 sm:px-6 py-8;
+}
+
+.card {
+  @apply bg-white shadow-sm rounded-lg p-4;
+}
 
 button {
   cursor: pointer;

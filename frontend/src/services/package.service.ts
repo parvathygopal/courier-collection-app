@@ -19,13 +19,14 @@ export const packageService = {
   },
 
   getHistory: async (trackingId: string) => {
-    const response = await api.get(`/packages/${trackingId}/history`);
+    const response = await api.get(`/packages/${trackingId}/tracking-history`);
 
     return response.data.data;
   },
 
-  updateStatus: async (trackingId: string) => {
-    const response = await api.patch(`/packages/${trackingId}/status`);
+  updateStatus: async (trackingId: string, location?: string) => {
+    const body = location ? { location } : undefined;
+    const response = await api.patch(`/packages/${trackingId}`, body);
 
     return response.data.data;
   },
