@@ -1,0 +1,14 @@
+import { useQuery } from "@tanstack/react-query";
+
+import { packageService } from "../services/package.service";
+import { QUERY_KEYS } from "../constants/queryKey";
+import type { TrackingHistory } from "../types/package.types";
+
+export const usePackageHistory = (trackingId: string) =>
+  useQuery<TrackingHistory[]>({
+    queryKey: QUERY_KEYS.HISTORY(trackingId),
+
+    queryFn: () => packageService.getHistory(trackingId),
+
+    enabled: !!trackingId,
+  });
