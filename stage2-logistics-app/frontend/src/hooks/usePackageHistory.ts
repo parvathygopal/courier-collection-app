@@ -8,7 +8,10 @@ export const usePackageHistory = (trackingId: string) =>
   useQuery<TrackingHistory[]>({
     queryKey: QUERY_KEYS.HISTORY(trackingId),
 
-    queryFn: () => packageService.getHistory(trackingId),
+    queryFn: async () => {
+      const res = await packageService.getHistory(trackingId);
+      return res.data ?? [];
+    },
 
     enabled: !!trackingId,
   });

@@ -10,6 +10,7 @@ import { CreateBagPage } from "./pages/CreateBag";
 import { CreateTruckPage } from "./pages/CreateTruck";
 import AssignPackage from "./pages/AssignPackage";
 import AssignBag from "./pages/AssignBag";
+import PackageDetails from "./pages/PackageDetails";
 
 export const router = createBrowserRouter([
   {
@@ -23,6 +24,10 @@ export const router = createBrowserRouter([
       {
         path: "packages",
         element: <PackageList />,
+      },
+      {
+        path: "packages/:trackingId",
+        element: <PackageDetails />,
       },
 
       {

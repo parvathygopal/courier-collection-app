@@ -1,9 +1,12 @@
-import React from "react";
 import { useParams } from "react-router-dom";
 import { usePackage } from "../../hooks/usePackages";
 import { usePackageHistory } from "../../hooks/usePackageHistory";
 import { useUpdateStatus } from "../../hooks/useUpdateStatus";
-
+import {
+  formatStatus,
+  STATUS_TRANSITIONS,
+  statusClass,
+} from "../../lib/package-status";
 export default function PackageDetails() {
   const { trackingId } = useParams();
 
@@ -41,15 +44,11 @@ export default function PackageDetails() {
             <div className="text-sm text-gray-500">Status</div>
             <div className="mt-1">
               <span
-                className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${
-                  data.currentStatus === "DELIVERED"
-                    ? "bg-green-100 text-green-800"
-                    : data.currentStatus === "IN_TRANSIT"
-                      ? "bg-yellow-100 text-yellow-800"
-                      : "bg-gray-100 text-gray-800"
-                }`}
+                className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${statusClass(
+                  data.currentStatus,
+                )}`}
               >
-                {data.currentStatus}
+                {formatStatus(data.currentStatus)}
               </span>
             </div>
           </div>
@@ -57,10 +56,7 @@ export default function PackageDetails() {
         <div className="mt-6">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-lg font-semibold">History</h2>
-            <StatusUpdater
-              trackingId={data.trackingId}
-              initialLocation={data.currentLocation}
-            />
+            <StatusUpdater trackingId={data.trackingId} />
           </div>
 
           <PackageHistory trackingId={data.trackingId} />
@@ -84,11 +80,12 @@ function PackageHistory({ trackingId }: { trackingId: string }) {
         <div className="timeline-item" key={item.id}>
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-sm font-medium">{item.status}</div>
-              <div className="text-xs text-gray-500">{item.location}</div>
+              <div className="text-sm font-medium">
+                {formatStatus(item.status)}
+              </div>
             </div>
             <div className="text-xs text-gray-400">
-              {new Date(item.timestamp).toLocaleString()}
+              {new Date(item.createdAt).toLocaleString()}
             </div>
           </div>
         </div>
@@ -97,33 +94,26 @@ function PackageHistory({ trackingId }: { trackingId: string }) {
   );
 }
 
-function StatusUpdater({
-  trackingId,
-  initialLocation,
-}: {
-  trackingId: string;
-  initialLocation: string;
-}) {
+function StatusUpdater({ trackingId }: { trackingId: string }) {
+  const { data: pkg } = usePackage(trackingId);
   const mutation = useUpdateStatus(trackingId);
   const loading = mutation.status === "pending";
-  const [location, setLocation] = React.useState<string>(initialLocation);
-  const doUpdate = () => {
-    mutation.mutate(location);
-  };
+
+  const nextStatus = pkg ? STATUS_TRANSITIONS[pkg.currentStatus] : null;
 
   return (
-    <div className="flex items-center gap-3">
-      <input
-        value={location}
-        placeholder={"Current Location"}
-        onChange={(e) => setLocation(e.target.value)}
-        className="rounded-md border border-gray-200 p-2 text-sm"
-      />
-
-      <button className="btn btn-primary" onClick={doUpdate} disabled={loading}>
-        {loading ? "Updating…" : "Apply"}
+    <div>
+      <button
+        onClick={() => mutation.mutate()}
+        disabled={loading || !nextStatus}
+        className="bg-blue-600 text-white px-4 py-2 rounded disabled:bg-gray-400"
+      >
+        {loading
+          ? "Updating…"
+          : nextStatus
+            ? `Mark as ${formatStatus(nextStatus)}`
+            : "Already delivered"}
       </button>
-
       {mutation.isError && (
         <div className="text-red-600 text-sm mt-2">
           Failed to update status.

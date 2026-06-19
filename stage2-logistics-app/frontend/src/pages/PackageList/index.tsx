@@ -1,5 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { usePackages } from "../../hooks/usePackages";
+import { formatStatus, statusClass } from "../../lib/package-status";
 
 export default function PackageList() {
   const navigate = useNavigate();
@@ -63,15 +64,11 @@ export default function PackageList() {
                     </td>
                     <td className="px-4 py-3 text-sm">
                       <span
-                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${
-                          pkg.currentStatus === "DELIVERED"
-                            ? "bg-green-100 text-green-800"
-                            : pkg.currentStatus === "IN_TRANSIT"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : "bg-gray-100 text-gray-800"
-                        }`}
+                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${statusClass(
+                          pkg.currentStatus,
+                        )}`}
                       >
-                        {pkg.currentStatus}
+                        {formatStatus(pkg.currentStatus)}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-700">
@@ -88,7 +85,7 @@ export default function PackageList() {
               ) : (
                 <tr>
                   <td
-                    colSpan={4}
+                    colSpan={5}
                     className="px-4 py-6 text-center text-gray-500"
                   >
                     No packages found.
