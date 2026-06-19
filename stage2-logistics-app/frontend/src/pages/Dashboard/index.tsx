@@ -19,7 +19,9 @@ function SectionCard({
       </div>
 
       {packages.length === 0 ? (
-        <div className="text-sm text-gray-500">No packages in this section.</div>
+        <div className="text-sm text-gray-500">
+          No packages in this section.
+        </div>
       ) : (
         <div className="space-y-2">
           {packages.slice(0, 10).map((pkg) => (

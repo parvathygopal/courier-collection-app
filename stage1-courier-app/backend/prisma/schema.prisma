@@ -55,3 +55,15 @@ model StatusHistory {
   @@index([packageId])
   @@map("status_history")
 }
+
+model RawUpdate {
+  id          String   @id @default(uuid())
+  rawData     Json
+  processed   Boolean  @default(false)
+  processedAt DateTime?
+  error       String?
+  createdAt   DateTime @default(now())
+
+  @@index([processed, createdAt])
+  @@map("raw_updates")
+}
