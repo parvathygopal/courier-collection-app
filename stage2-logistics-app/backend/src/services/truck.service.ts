@@ -53,12 +53,43 @@ export async function assignBagToTruck(truckId: string, bagId: string) {
     );
   }
 
-  return prisma.bag.update({
-    where: {
-      id: bagId,
-    },
-    data: {
-      truckId,
-    },
+  return prisma.$transaction(async (tx) => {
+    const updatedBag = await tx.bag.update({
+      where: {
+        id: bagId,
+      },
+      data: {
+        truckId,
+      },
+    });
+
+    const bagPackages = await tx.package.findMany({
+      where: {
+        bagId,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (bagPackages.length > 0) {
+      await tx.package.updateMany({
+        where: {
+          bagId,
+        },
+        data: {
+          currentStatus: "EN_ROUTE",
+        },
+      });
+
+      await tx.packageHistory.createMany({
+        data: bagPackages.map((pkg) => ({
+          packageId: pkg.id,
+          status: "EN_ROUTE",
+        })),
+      });
+    }
+
+    return updatedBag;
   });
 }

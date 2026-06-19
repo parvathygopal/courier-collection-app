@@ -12,10 +12,31 @@ export async function getDashboardStats() {
     },
   });
 
+  const created = await prisma.package.count({
+    where: {
+      currentStatus: "TO_BE_PICKED_UP",
+    },
+  });
+
+  const inTransit = await prisma.package.count({
+    where: {
+      currentStatus: "EN_ROUTE",
+    },
+  });
+
+  const delivered = await prisma.package.count({
+    where: {
+      currentStatus: "OUT_FOR_DELIVERY",
+    },
+  });
+
   return {
     totalPackages,
     totalBags,
     totalTrucks,
     inBagPackages,
+    created,
+    inTransit,
+    delivered,
   };
 }

@@ -58,16 +58,27 @@ export async function assignPackageToBag(bagId: string, packageId: string) {
     );
   }
 
-  return prisma.package.update({
-    where: {
-      id: packageId,
-    },
-    data: {
-      bagId,
-      currentStatus: "ADDED_TO_BAG",
-    },
-    include: {
-      bag: true,
-    },
+  return prisma.$transaction(async (tx) => {
+    const updatedPackage = await tx.package.update({
+      where: {
+        id: packageId,
+      },
+      data: {
+        bagId,
+        currentStatus: "ADDED_TO_BAG",
+      },
+      include: {
+        bag: true,
+      },
+    });
+
+    await tx.packageHistory.create({
+      data: {
+        packageId,
+        status: "ADDED_TO_BAG",
+      },
+    });
+
+    return updatedPackage;
   });
 }

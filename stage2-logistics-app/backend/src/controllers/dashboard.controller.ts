@@ -8,7 +8,11 @@ export const getDashboard = async (
 ) => {
   try {
     const stats = await getDashboardStats();
-    res.status(200).json({ success: true, data: stats });
+    res.status(200).json({
+      error: null,
+      message: "Dashboard fetched successfully",
+      data: stats,
+    });
   } catch (error: unknown) {
     next(error);
   }

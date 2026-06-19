@@ -2,7 +2,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { usePackages } from "../../hooks/usePackages";
 
 export default function PackageList() {
-  const { data, isLoading } = usePackages();
+  const navigate = useNavigate();
+  const { data: packages = [], isLoading } = usePackages();
   if (isLoading) {
     return (
       <div className="container">
@@ -10,8 +11,6 @@ export default function PackageList() {
       </div>
     );
   }
-
-  const navigate = useNavigate();
 
   return (
     <div className="container">
@@ -51,8 +50,8 @@ export default function PackageList() {
             </thead>
 
             <tbody className="bg-white divide-y divide-gray-100">
-              {data && data.length > 0 ? (
-                data.map((pkg: any) => (
+              {packages && packages.length > 0 ? (
+                packages.map((pkg: any) => (
                   <tr key={pkg.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3 text-sm text-gray-700">
                       <Link
