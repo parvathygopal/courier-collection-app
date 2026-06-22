@@ -1,5 +1,8 @@
 import { randomUUID } from "crypto";
-import type { CreatePackageInput } from "../schemas/package.schema.js";
+import type {
+  CreatePackageInput,
+  WebhookCreatePackageInput,
+} from "../schemas/package.schema.js";
 import { prisma } from "../lib/prisma.js";
 import { AppError } from "../errors/app.error.js";
 
@@ -172,4 +175,186 @@ export async function updatePackageStatus(trackingId: string) {
 
     return updated;
   });
+}
+
+export async function createPackageFromWebhook(data: WebhookCreatePackageInput) {
+  const sourceRegion = await prisma.region.findUnique({
+    where: {
+      code: data.sourceRegionCode,
+    },
+  });
+
+  const destinationRegion = await prisma.region.findUnique({
+    where: {
+      code: data.destinationRegionCode,
+    },
+  });
+
+  if (!sourceRegion || !destinationRegion) {
+    throw new AppError(
+      "INVALID_REGION",
+      "One or both regions were not found",
+      400,
+    );
+  }
+
+  const existingPackage = await prisma.package.findUnique({
+    where: {
+      trackingId: data.trackingId,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (existingPackage) {
+    throw new AppError(
+      "TRACKING_ID_ALREADY_EXISTS",
+      "Package with trackingId already exists",
+      409,
+    );
+  }
+
+  return prisma.$transaction(async (tx) => {
+    const createdPackage = await tx.package.create({
+      data: {
+        trackingId: data.trackingId,
+        sourceRegionId: sourceRegion.id,
+        destinationRegionId: destinationRegion.id,
+        currentStatus: "TO_BE_PICKED_UP",
+      },
+      include: {
+        bag: true,
+        sourceRegion: true,
+        destinationRegion: true,
+      },
+    });
+
+    await tx.packageHistory.create({
+      data: {
+        packageId: createdPackage.id,
+        status: "TO_BE_PICKED_UP",
+      },
+    });
+
+    return createdPackage;
+  });
+}
+
+const STAGE1_STATUS_MAP: Record<string, string> = {
+  TO_BE_PICKED_UP: "CREATED",
+  PICKED_UP: "PICKED_UP",
+  ADDED_TO_BAG: "IN_TRANSIT",
+  EN_ROUTE: "IN_TRANSIT",
+  ARRIVED: "IN_TRANSIT",
+  SCHEDULED_FOR_DELIVERY: "OUT_FOR_DELIVERY",
+  OUT_FOR_DELIVERY: "OUT_FOR_DELIVERY",
+};
+
+let lastSuccessfulPushAt = new Date(Date.now() - 6 * 60 * 60 * 1000);
+
+function mapLocationForStage1(status: string, sourceCode: string, destinationCode: string) {
+  if (status === "TO_BE_PICKED_UP" || status === "PICKED_UP" || status === "ADDED_TO_BAG") {
+    return sourceCode;
+  }
+
+  if (status === "EN_ROUTE") {
+    return `EN_ROUTE_TO_${destinationCode}`;
+  }
+
+  return destinationCode;
+}
+
+export async function pushStatusUpdatesToStage1() {
+  const stage1RawUpdatesUrl = process.env.STAGE1_RAW_UPDATES_URL;
+
+  if (!stage1RawUpdatesUrl) {
+    return {
+      sent: 0,
+      skipped: true,
+      reason: "STAGE1_RAW_UPDATES_URL is not configured",
+    };
+  }
+
+  const updates = await prisma.packageHistory.findMany({
+    where: {
+      createdAt: {
+        gt: lastSuccessfulPushAt,
+      },
+    },
+    include: {
+      package: {
+        include: {
+          sourceRegion: true,
+          destinationRegion: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "asc",
+    },
+    take: 500,
+  });
+
+  if (updates.length === 0) {
+    return {
+      sent: 0,
+      skipped: true,
+      reason: "No updates to push",
+    };
+  }
+
+  const payload = {
+    updates: updates.map((update) => ({
+      updateId: update.id,
+      trackingId: update.package.trackingId,
+      status: STAGE1_STATUS_MAP[update.status] ?? "IN_TRANSIT",
+      location: mapLocationForStage1(
+        update.status,
+        update.package.sourceRegion.code,
+        update.package.destinationRegion.code,
+      ),
+      timestamp: update.createdAt.toISOString(),
+      sourceStatus: update.status,
+    })),
+  };
+
+  const headers: Record<string, string> = {
+    "content-type": "application/json",
+  };
+
+  if (process.env.STAGE1_RAW_UPDATES_API_KEY) {
+    headers["x-api-key"] = process.env.STAGE1_RAW_UPDATES_API_KEY;
+  }
+
+  const response = await fetch(stage1RawUpdatesUrl, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    throw new AppError(
+      "ETL_PUSH_FAILED",
+      `Failed to push updates to Stage 1: ${response.status} ${errorBody}`,
+      502,
+    );
+  }
+
+  const lastUpdate = updates[updates.length - 1];
+  if (!lastUpdate) {
+    return {
+      sent: 0,
+      skipped: true,
+      reason: "No updates to push",
+    };
+  }
+
+  lastSuccessfulPushAt = lastUpdate.createdAt;
+
+  return {
+    sent: updates.length,
+    skipped: false,
+  };
 }

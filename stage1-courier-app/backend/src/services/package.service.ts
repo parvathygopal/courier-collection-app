@@ -5,8 +5,47 @@ import { packageCreateSchema } from "../validators/package.validator";
 
 type PackageCreateInput = z.infer<typeof packageCreateSchema>;
 
+async function notifyStage2Webhook(pkg: {
+  trackingId: string;
+  senderAddress: string;
+  receiverAddress: string;
+  sourceRegion: string;
+  destinationRegion: string;
+  weight: number;
+  currentLocation: string;
+}) {
+  const webhookUrl = process.env.STAGE2_WEBHOOK_URL;
+  if (!webhookUrl) {
+    console.warn("[Webhook] STAGE2_WEBHOOK_URL not set — skipping");
+    return;
+  }
+  try {
+    const res = await fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        trackingId: pkg.trackingId,
+        senderAddress: pkg.senderAddress,
+        receiverAddress: pkg.receiverAddress,
+        sourceRegionCode: pkg.sourceRegion,
+        destinationRegionCode: pkg.destinationRegion,
+        weight: pkg.weight,
+      }),
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      console.log("[Webhook] Status:", res.status);
+      console.log("[Webhook] Body:", text);
+    } else {
+      console.log(`[Webhook] Package ${pkg.trackingId} sent to Stage 2`);
+    }
+  } catch (err) {
+    console.error("[Webhook] Failed to call Stage 2:", err);
+  }
+}
+
 export async function createPackage(data: PackageCreateInput) {
-  return prisma.package.create({
+  const pkg = await prisma.package.create({
     data: {
       trackingId: randomUUID(),
       senderAddress: data.senderAddress,
@@ -17,6 +56,11 @@ export async function createPackage(data: PackageCreateInput) {
       currentLocation: data.currentLocation ?? "",
     },
   });
+
+  // Fire-and-forget webhook — does not block response
+  void notifyStage2Webhook(pkg);
+
+  return pkg;
 }
 
 export async function getAllPackages() {
