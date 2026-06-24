@@ -5,6 +5,7 @@ import packageRoutes from "./routes/package.routes";
 import dashboardRoutes from "./routes/dasboard.routes";
 import rawUpdateRoutes from "./routes/raw-update.routes";
 import { ZodError } from "zod";
+import { ApiResponse } from "./types/api";
 
 dotenv.config();
 
@@ -33,7 +34,13 @@ app.use(cors(corsOptions));
 app.options("*", cors(corsOptions));
 
 // Middleware
-app.use(express.json());
+app.use(
+  express.json({
+    verify: (req, res, buf) => {
+      (req as Request & { rawBody?: string }).rawBody = buf.toString("utf8");
+    },
+  }),
+);
 
 // Routes
 app.use("/packages", packageRoutes);

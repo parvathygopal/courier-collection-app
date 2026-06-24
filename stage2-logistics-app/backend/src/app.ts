@@ -1,4 +1,5 @@
 import express from "express";
+import type { Request } from "express";
 import packageRoutes from "./routes/package.route.js";
 import bagRoutes from "./routes/bag.route.js";
 import truckRoutes from "./routes/truck.route.js";
@@ -10,7 +11,9 @@ import cors from "cors";
 
 const app = express();
 
-const FRONTEND_ORIGINS = ["http://localhost:5174", "http://127.0.0.1:5174"];
+const FRONTEND_ORIGINS = process.env.FRONTEND_ORIGINS?.split(",").map((s) =>
+  s.trim(),
+) ?? ["http://localhost:5174", "http://127.0.0.1:5174"];
 
 app.use(
   cors({
@@ -19,7 +22,13 @@ app.use(
   }),
 );
 
-app.use(express.json());
+app.use(
+  express.json({
+    verify: (req, res, buf) => {
+      (req as Request & { rawBody?: string }).rawBody = buf.toString("utf8");
+    },
+  }),
+);
 
 app.use("/packages", packageRoutes);
 app.use("/bags", bagRoutes);

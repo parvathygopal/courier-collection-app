@@ -2,9 +2,9 @@ import z from "zod";
 import { prisma } from "../config/prisma";
 import { randomUUID } from "crypto";
 import { packageCreateSchema } from "../validators/package.validator";
+import { signRawBody } from "../security/hmac";
 
 type PackageCreateInput = z.infer<typeof packageCreateSchema>;
-
 async function notifyStage2Webhook(pkg: {
   trackingId: string;
   senderAddress: string;
@@ -15,22 +15,42 @@ async function notifyStage2Webhook(pkg: {
   currentLocation: string;
 }) {
   const webhookUrl = process.env.STAGE2_WEBHOOK_URL;
+  const apiKey = process.env.STAGE1_RAW_UPDATES_API_KEY;
+  const secret = process.env.STAGE1_SIGNING_SECRET;
+
   if (!webhookUrl) {
     console.warn("[Webhook] STAGE2_WEBHOOK_URL not set — skipping");
     return;
   }
+
+  if (!apiKey || !secret) {
+    console.warn("[Webhook] STAGE1_TO_STAGE2 auth config missing — skipping");
+    return;
+  }
+
+  const payload = {
+    trackingId: pkg.trackingId,
+    senderAddress: pkg.senderAddress,
+    receiverAddress: pkg.receiverAddress,
+    sourceRegionCode: pkg.sourceRegion,
+    destinationRegionCode: pkg.destinationRegion,
+    weight: pkg.weight,
+  };
+
+  const rawBody = JSON.stringify(payload);
+  const timestamp = Date.now().toString();
+  const signature = signRawBody(rawBody, timestamp, secret);
+
   try {
     const res = await fetch(webhookUrl, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        trackingId: pkg.trackingId,
-        senderAddress: pkg.senderAddress,
-        receiverAddress: pkg.receiverAddress,
-        sourceRegionCode: pkg.sourceRegion,
-        destinationRegionCode: pkg.destinationRegion,
-        weight: pkg.weight,
-      }),
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "x-timestamp": timestamp,
+        "x-signature": signature,
+      },
+      body: rawBody,
     });
     if (!res.ok) {
       const text = await res.text();

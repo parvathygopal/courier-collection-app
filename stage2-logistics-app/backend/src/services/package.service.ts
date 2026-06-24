@@ -5,6 +5,7 @@ import type {
 } from "../schemas/package.schema.js";
 import { prisma } from "../lib/prisma.js";
 import { AppError } from "../errors/app.error.js";
+import { signRawBody } from "../security/hmac.js";
 
 const STATUS_TRANSITIONS = {
   TO_BE_PICKED_UP: "PICKED_UP",
@@ -177,7 +178,9 @@ export async function updatePackageStatus(trackingId: string) {
   });
 }
 
-export async function createPackageFromWebhook(data: WebhookCreatePackageInput) {
+export async function createPackageFromWebhook(
+  data: WebhookCreatePackageInput,
+) {
   const sourceRegion = await prisma.region.findUnique({
     where: {
       code: data.sourceRegionCode,
@@ -253,8 +256,16 @@ const STAGE1_STATUS_MAP: Record<string, string> = {
 
 let lastSuccessfulPushAt = new Date(Date.now() - 6 * 60 * 60 * 1000);
 
-function mapLocationForStage1(status: string, sourceCode: string, destinationCode: string) {
-  if (status === "TO_BE_PICKED_UP" || status === "PICKED_UP" || status === "ADDED_TO_BAG") {
+function mapLocationForStage1(
+  status: string,
+  sourceCode: string,
+  destinationCode: string,
+) {
+  if (
+    status === "TO_BE_PICKED_UP" ||
+    status === "PICKED_UP" ||
+    status === "ADDED_TO_BAG"
+  ) {
     return sourceCode;
   }
 
@@ -319,18 +330,34 @@ export async function pushStatusUpdatesToStage1() {
     })),
   };
 
+  const stage2ApiKey =
+    process.env.STAGE1_RAW_UPDATES_API_KEY ??
+    process.env.STAGE1_RAW_UPDATES_API_KEY;
+  const stage2Secret = process.env.STAGE1_SIGNING_SECRET;
+
+  if (!stage2ApiKey || !stage2Secret) {
+    throw new AppError(
+      "ETL_AUTH_NOT_CONFIGURED",
+      "Stage 2 to Stage 1 auth config missing",
+      500,
+    );
+  }
+
+  const rawBody = JSON.stringify(payload);
+  const timestamp = Date.now().toString();
+  const signature = signRawBody(rawBody, timestamp, stage2Secret);
+
   const headers: Record<string, string> = {
     "content-type": "application/json",
+    "x-api-key": stage2ApiKey,
+    "x-timestamp": timestamp,
+    "x-signature": signature,
   };
-
-  if (process.env.STAGE1_RAW_UPDATES_API_KEY) {
-    headers["x-api-key"] = process.env.STAGE1_RAW_UPDATES_API_KEY;
-  }
 
   const response = await fetch(stage1RawUpdatesUrl, {
     method: "POST",
     headers,
-    body: JSON.stringify(payload),
+    body: rawBody,
   });
 
   if (!response.ok) {
