@@ -4,6 +4,6 @@ import { createPackageFromStage1Webhook } from "../controllers/webhook.controlle
 
 const router = Router();
 
-router.post("/package", verifyIntegration, createPackageFromStage1Webhook);
+router.post("/packages", verifyIntegration, createPackageFromStage1Webhook);
 
 export default router;

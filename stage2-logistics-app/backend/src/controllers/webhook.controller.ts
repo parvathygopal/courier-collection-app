@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
+import { AppError } from "../errors/app.error.js";
 import { webhookCreatePackageSchema } from "../schemas/package.schema.js";
-import { createPackageFromWebhook } from "../services/package.service.js";
+import { enqueuePackageWebhook } from "../services/webhook.service.js";
 
 export async function createPackageFromStage1Webhook(
   req: Request,
@@ -8,17 +9,31 @@ export async function createPackageFromStage1Webhook(
   next: NextFunction,
 ) {
   try {
-    console.log("Webhook body:", req.body);
     const payload = webhookCreatePackageSchema.parse(req.body);
-    const result = await createPackageFromWebhook(payload);
+    const apiKey = (req as Request & { integrationApiKey?: string })
+      .integrationApiKey;
 
-    res.status(201).json({
+    if (!apiKey) {
+      throw new AppError(
+        "UNAUTHORIZED",
+        "Validated integration API key is missing",
+        401,
+      );
+    }
+
+    const result = await enqueuePackageWebhook({
+      payload,
+      apiKey,
+    });
+
+    res.status(202).json({
       error: null,
-      message: "Package created from webhook successfully",
+      message: result.duplicate
+        ? "Duplicate webhook request received"
+        : "Webhook request accepted for processing",
       data: result,
     });
   } catch (error) {
-    console.error("Validation Error:", error);
     next(error);
   }
 }

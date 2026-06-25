@@ -13,7 +13,12 @@ const app = express();
 
 const FRONTEND_ORIGINS = process.env.FRONTEND_ORIGINS?.split(",").map((s) =>
   s.trim(),
-) ?? ["http://localhost:5174", "http://127.0.0.1:5174"];
+) ?? [
+  "http://localhost:5174",
+  "http://127.0.0.1:5174",
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+];
 
 app.use(
   cors({
@@ -35,7 +40,7 @@ app.use("/bags", bagRoutes);
 app.use("/trucks", truckRoutes);
 app.use("/dashboard", dashboardRoutes);
 app.use("/regions", regionRoutes);
-app.use("/webhook", webhookRoutes);
+app.use("/webhooks", webhookRoutes);
 
 app.get("/", (req, res) => {
   res.send("Hello from courier-logistics-app");

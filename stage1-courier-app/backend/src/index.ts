@@ -8,7 +8,7 @@ dotenv.config();
 
 const PORT = process.env.PORT || 3001;
 
-console.log("STAGE 2 BACKEND RUNNING");
+console.log("STAGE 1 BACKEND RUNNING");
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
