@@ -1,0 +1,69 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PackageStatus {
+  CREATED
+  PICKED_UP
+  IN_TRANSIT
+  OUT_FOR_DELIVERY
+  DELIVERED
+  RETURNED
+  CANCELLED
+}
+
+model Package {
+  id                String         @id @default(uuid())
+  trackingId        String         @unique
+  senderAddress     String
+  receiverAddress   String
+  sourceRegion      String
+  destinationRegion String
+  weight            Float
+  currentStatus     PackageStatus  @default(CREATED)
+  currentLocation   String
+  createdAt         DateTime       @default(now())
+
+  sale              Sale?
+  statusHistory     StatusHistory[]
+
+  @@map("packages")
+}
+
+model Sale {
+  id        String   @id @default(uuid())
+  packageId String   @unique
+  amount    Float
+  package   Package  @relation(fields: [packageId], references: [id])
+
+  @@map("sales")
+}
+
+model StatusHistory {
+  id         String        @id @default(uuid())
+  packageId  String
+  status     PackageStatus
+  location   String
+  timestamp  DateTime      @default(now())
+  package    Package       @relation(fields: [packageId], references: [id])
+
+  @@index([packageId])
+  @@map("status_history")
+}
+
+model RawUpdate {
+  id          String   @id @default(uuid())
+  rawData     Json
+  processed   Boolean  @default(false)
+  processedAt DateTime?
+  error       String?
+  createdAt   DateTime @default(now())
+
+  @@index([processed, createdAt])
+  @@map("raw_updates")
+}

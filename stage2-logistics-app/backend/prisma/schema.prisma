@@ -1,0 +1,120 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PackageStatus {
+  TO_BE_PICKED_UP
+  PICKED_UP
+  ADDED_TO_BAG
+  EN_ROUTE
+  ARRIVED
+  SCHEDULED_FOR_DELIVERY
+  OUT_FOR_DELIVERY
+}
+
+enum WebhookQueueStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model Region {
+  id        String   @id @default(uuid())
+  code      String   @unique
+  name      String
+
+  createdAt DateTime @default(now())
+
+  sourcePackages      Package[] @relation("SourceRegion")
+  destinationPackages Package[] @relation("DestinationRegion")
+}
+
+model Package {
+  id String @id @default(uuid())
+
+  trackingId String @unique
+
+  currentStatus PackageStatus
+
+  createdAt DateTime @default(now())
+
+  bagId String?
+  bag   Bag? @relation(fields: [bagId], references: [id])
+
+  sourceRegionId String
+  sourceRegion Region @relation("SourceRegion", fields: [sourceRegionId], references: [id])
+
+  destinationRegionId String
+  destinationRegion Region @relation("DestinationRegion", fields: [destinationRegionId], references: [id])
+
+  history PackageHistory[]
+}
+
+
+
+model Bag {
+  id String @id @default(uuid())
+
+  bagCode String @unique
+
+  createdAt DateTime @default(now())
+
+  packages Package[]
+
+  truckId String?
+  truck Truck? @relation(fields: [truckId], references: [id])
+}
+
+model Truck {
+  id String @id @default(uuid())
+
+  registrationNumber String @unique
+
+  bags Bag[]
+
+  createdAt DateTime @default(now())
+}
+
+model PackageHistory {
+  id        String        @id @default(cuid())
+  packageId String
+  status    PackageStatus
+  createdAt DateTime      @default(now())
+
+  package   Package       @relation(fields: [packageId], references: [id])
+
+  @@index([packageId])
+}
+
+model WebhookPackageQueue {
+  id                    String             @id @default(cuid())
+  apiKeyFingerprint     String
+  trackingId            String
+  sourceRegionCode      String
+  destinationRegionCode String
+  status                WebhookQueueStatus @default(PENDING)
+  attempts              Int                @default(0)
+  maxAttempts           Int                @default(5)
+  nextAttemptAt         DateTime           @default(now())
+  lockedAt              DateTime?
+  processedAt           DateTime?
+  lastError             String?
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+
+  @@unique([apiKeyFingerprint, trackingId])
+  @@index([status, nextAttemptAt, createdAt])
+}
+
+
