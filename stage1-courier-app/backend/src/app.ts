@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import packageRoutes from "./routes/package.routes";
 import dashboardRoutes from "./routes/dasboard.routes";
 import rawUpdateRoutes from "./routes/raw-update.routes";
+import integrationRoutes from "./routes/integration.routes";
 import { ZodError } from "zod";
 import { ApiResponse } from "./types/api";
 
@@ -45,6 +46,7 @@ app.use(
 // Routes
 app.use("/packages", packageRoutes);
 app.use("/", rawUpdateRoutes);
+app.use("/integrations", integrationRoutes);
 
 // Dashboard: package counts by status
 app.use("/dashboard", dashboardRoutes);

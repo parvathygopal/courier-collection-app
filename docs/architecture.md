@@ -2,11 +2,10 @@
 
 ## Overview
 
-The platform consists of three independent systems:
+The platform consists of two independent applications:
 
 1. Courier Collection Application (B2C)
 2. Courier Logistics Application (B2B)
-3. Support System
 
 Each system owns its own data and communicates only through APIs.
 
@@ -35,13 +34,6 @@ Customer
 +----------------------+
 | Collection App       |
 +----------------------+
-
-          |
-          v
-
-+----------------------+
-| Support System       |
-+----------------------+
 ```
 
 ---
@@ -52,14 +44,16 @@ Customer
 
 Responsibilities:
 
-- Create packages
-- Generate tracking IDs
+- Create packages with from, to, weight, and region details
+- Generate tracking IDs (UUID)
+- Generate bill of sale
 - Customer package tracking
 - Display simplified status updates
 
 Owns:
 
 - Package
+- Sale details
 - Tracking History
 - Customer Views
 
@@ -69,6 +63,30 @@ Does not own:
 - Bags
 - Regions
 - Internal logistics operations
+
+---
+
+## Stage 1 Dashboard
+
+Front office dashboard sections:
+
+- Packages added and yet to be picked up
+- Actively moving deliveries to their current location
+- Delayed packages with the reason
+
+---
+
+## Public Tracking Page
+
+Publicly accessible page with:
+
+- Tracking ID input
+- Captcha input
+
+Returns:
+
+- Region, status, and bag information for last scan
+- Delay information if the package is delayed
 
 ---
 
@@ -83,6 +101,7 @@ Responsibilities:
 - Truck management
 - Package movement
 - Package status updates
+- Delayed status updates for bags and related packages
 
 Package Flow:
 
@@ -107,12 +126,30 @@ ADDED_TO_BAG
 ↓
 EN_ROUTE
 ↓
-ARRIVED_AT_REGION
+ARRIVED
 ↓
 SCHEDULED_FOR_DELIVERY
 ↓
 OUT_FOR_DELIVERY
 ```
+
+---
+
+## Stage 2 Dashboard
+
+Back office dashboard sections:
+
+- New packages arrived in the last collection set and yet to be bagged
+- Packages from the last truck arrival and yet to be bagged
+- Packages bagged and loaded onto trucks
+- Delayed packages
+
+---
+
+## Truck Delay Logic
+
+A truck departure can be delayed due to technical issues or insufficient bags.
+Delayed departures are moved to the next scheduled departure.
 
 ---
 
@@ -140,8 +177,8 @@ Example Payload:
 ```json
 {
   "trackingId": "TRK123",
-  "sourceRegionId": "region-1",
-  "destinationRegionId": "region-2"
+  "sourceRegionCode": "region-1",
+  "destinationRegionCode": "region-2"
 }
 ```
 
@@ -149,7 +186,7 @@ Example Payload:
 
 ## Authentication
 
-Every customer receives:
+Every integration uses:
 
 - API Key
 - Signing Secret
@@ -158,6 +195,7 @@ Requests contain:
 
 ```http
 x-api-key
+x-timestamp
 x-signature
 ```
 
@@ -209,7 +247,7 @@ Benefits:
 
 ---
 
-# Stage 4
+# Stage 3 (continued)
 
 ## ETL Synchronization
 
@@ -227,7 +265,7 @@ Collection App
 
 Schedule:
 
-- Every 4 hours in production
+- Every 6 hours in production
 - Every 1 minute in development
 
 ---
@@ -375,25 +413,6 @@ DISABLED
 ```
 
 Notifications are sent automatically.
-
----
-
-# Support System
-
-Support users receive read-only access.
-
-Responsibilities:
-
-- Package investigation
-- Delay analysis
-- Refund support
-- Escalations
-
-Support users must not:
-
-- Modify package status
-- Create packages
-- Update logistics data
 
 ---
 

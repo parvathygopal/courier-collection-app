@@ -2,67 +2,9 @@ import z from "zod";
 import { prisma } from "../config/prisma";
 import { randomUUID } from "crypto";
 import { packageCreateSchema } from "../validators/package.validator";
-import { signRawBody } from "../security/hmac";
+import { enqueueWebhookOutbox } from "./webhook-outbox.service";
 
 type PackageCreateInput = z.infer<typeof packageCreateSchema>;
-async function notifyStage2Webhook(pkg: {
-  trackingId: string;
-  senderAddress: string;
-  receiverAddress: string;
-  sourceRegion: string;
-  destinationRegion: string;
-  weight: number;
-  currentLocation: string;
-}) {
-  const webhookUrl = process.env.STAGE2_WEBHOOK_URL;
-  const apiKey = process.env.STAGE1_RAW_UPDATES_API_KEY;
-  const secret = process.env.STAGE1_SIGNING_SECRET;
-
-  if (!webhookUrl) {
-    console.warn("[Webhook] STAGE2_WEBHOOK_URL not set — skipping");
-    return;
-  }
-
-  if (!apiKey || !secret) {
-    console.warn("[Webhook] STAGE1_TO_STAGE2 auth config missing — skipping");
-    return;
-  }
-
-  const payload = {
-    trackingId: pkg.trackingId,
-    senderAddress: pkg.senderAddress,
-    receiverAddress: pkg.receiverAddress,
-    sourceRegionCode: pkg.sourceRegion,
-    destinationRegionCode: pkg.destinationRegion,
-    weight: pkg.weight,
-  };
-
-  const rawBody = JSON.stringify(payload);
-  const timestamp = Date.now().toString();
-  const signature = signRawBody(rawBody, timestamp, secret);
-
-  try {
-    const res = await fetch(webhookUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "x-timestamp": timestamp,
-        "x-signature": signature,
-      },
-      body: rawBody,
-    });
-    if (!res.ok) {
-      const text = await res.text();
-      console.log("[Webhook] Status:", res.status);
-      console.log("[Webhook] Body:", text);
-    } else {
-      console.log(`[Webhook] Package ${pkg.trackingId} sent to Stage 2`);
-    }
-  } catch (err) {
-    console.error("[Webhook] Failed to call Stage 2:", err);
-  }
-}
 
 export async function createPackage(data: PackageCreateInput) {
   const pkg = await prisma.package.create({
@@ -77,8 +19,14 @@ export async function createPackage(data: PackageCreateInput) {
     },
   });
 
-  // Fire-and-forget webhook — does not block response
-  void notifyStage2Webhook(pkg);
+  await enqueueWebhookOutbox({
+    trackingId: pkg.trackingId,
+    senderAddress: pkg.senderAddress,
+    receiverAddress: pkg.receiverAddress,
+    sourceRegionCode: pkg.sourceRegion,
+    destinationRegionCode: pkg.destinationRegion,
+    weight: pkg.weight,
+  });
 
   return pkg;
 }
