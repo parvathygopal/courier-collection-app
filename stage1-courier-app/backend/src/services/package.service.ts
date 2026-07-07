@@ -1,6 +1,7 @@
 import z from "zod";
 import { prisma } from "../config/prisma";
 import { randomUUID } from "crypto";
+import { AppError } from "../errors/app.error";
 import { packageCreateSchema } from "../validators/package.validator";
 import { enqueueWebhookOutbox } from "./webhook-outbox.service";
 
@@ -53,7 +54,7 @@ export async function updatePackageStatusByTrackingId(
   });
 
   if (!packageData) {
-    throw new Error("Package not found");
+    throw AppError.notFound("Package not found");
   }
 
   let newStatus: "CREATED" | "IN_TRANSIT" | "DELIVERED";
@@ -65,19 +66,20 @@ export async function updatePackageStatusByTrackingId(
       newStatus = "DELIVERED";
       break;
     case "DELIVERED":
-      throw new Error("Package is already delivered");
+      throw AppError.conflict("Package is already delivered");
     default:
-      throw new Error("Invalid package status");
+      throw AppError.badRequest("Invalid package status");
   }
 
   await prisma.package.update({
     where: { trackingId },
     data: {
       currentStatus: newStatus,
+      currentLocation: location ?? "",
       statusHistory: {
         create: {
           status: newStatus,
-          location: location,
+          location: location ?? "",
         },
       },
     },

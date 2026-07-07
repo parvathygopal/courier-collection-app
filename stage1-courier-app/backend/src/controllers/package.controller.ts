@@ -50,9 +50,6 @@ export const updatePackageStatus = async (req: Request, res: Response, next: Nex
       trackingId as string,
       location,
     );
-    if (!updatedPackage) {
-      return res.status(404).json({ error: "Package not found" });
-    }
     return res.status(200).json({ success: true, data: updatedPackage });
   } catch (error) {
     return next(error as Error);

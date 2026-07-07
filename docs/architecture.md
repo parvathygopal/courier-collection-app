@@ -80,29 +80,44 @@ Bags
 Trucks
 Regions
 Internal logistics routing
+You are acting as the lead software architect for this repository.
 
-Those belong to the Logistics Application.
+Before answering, read:
 
-Dashboard
+* AGENTS.md
+* ROADMAP.md
+* docs/architecture.md
 
-Displays:
+Treat these documents as the source of truth.
 
-Packages waiting for pickup
-Packages currently in transit
-Delayed packages
-Public Tracking
+Now inspect the entire codebase.
 
-A customer can search using:
+Compare the implementation with the roadmap and architecture.
 
-Tracking ID
-Captcha
+Produce a report containing:
 
-The system returns:
+1. Completed features.
+2. Partially completed features.
+3. Missing features.
+4. Bugs or inconsistencies.
+5. Suggested improvements.
 
-Current status
-Current region
-Delay information 4. Stage 2 – Courier Logistics Application
-Purpose
+Then create a prioritized implementation plan.
+
+Break the remaining work into tasks of approximately 30–60 minutes each.
+
+For every task provide:
+
+* Goal
+* Files to modify
+* Backend changes
+* Frontend changes
+* Database changes (if any)
+* Acceptance criteria
+* Suggested commit message
+
+Do not generate code until I approve a task.
+
 
 The Logistics Application manages internal package movement.
 
