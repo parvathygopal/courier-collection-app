@@ -9,6 +9,12 @@ type ParsedRawUpdate = {
   timestamp?: string;
 };
 
+function backoffDelaySeconds(attempt: number) {
+  const baseSeconds = 10;
+  const maxSeconds = 300;
+  return Math.min(baseSeconds * 2 ** Math.max(0, attempt - 1), maxSeconds);
+}
+
 function parseRawUpdate(rawData: Prisma.JsonValue): ParsedRawUpdate {
   if (!rawData || Array.isArray(rawData) || typeof rawData !== "object") {
     throw new Error("Invalid raw update format");
@@ -63,15 +69,29 @@ export async function ingestRawUpdates(rawUpdates: RawUpdateBulkInput) {
 
 export async function processRawUpdatesBatch(limit = 100) {
   const pendingUpdates = await prisma.rawUpdate.findMany({
-    where: { processed: false },
+    where: {
+      processed: false,
+      nextAttemptAt: {
+        lte: new Date(),
+      },
+    },
     orderBy: { createdAt: "asc" },
     take: limit,
+    select: {
+      id: true,
+      rawData: true,
+      attempts: true,
+      maxAttempts: true,
+    },
   });
 
   let updatedPackages = 0;
   let failed = 0;
+  let retried = 0;
 
   for (const pendingUpdate of pendingUpdates) {
+    const attempts = pendingUpdate.attempts + 1;
+
     try {
       const parsed = parseRawUpdate(pendingUpdate.rawData);
       const statusTimestamp = parsed.timestamp
@@ -117,6 +137,7 @@ export async function processRawUpdatesBatch(limit = 100) {
             processed: true,
             processedAt: new Date(),
             error: null,
+            attempts,
           },
         });
       });
@@ -124,13 +145,24 @@ export async function processRawUpdatesBatch(limit = 100) {
       updatedPackages += 1;
     } catch (error) {
       failed += 1;
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown ETL error";
+      const shouldRetry = attempts < pendingUpdate.maxAttempts;
+
+      if (shouldRetry) {
+        retried += 1;
+      }
 
       await prisma.rawUpdate.update({
         where: { id: pendingUpdate.id },
         data: {
-          processed: true,
-          processedAt: new Date(),
-          error: error instanceof Error ? error.message : "Unknown ETL error",
+          attempts,
+          processed: !shouldRetry,
+          processedAt: shouldRetry ? null : new Date(),
+          nextAttemptAt: shouldRetry
+            ? new Date(Date.now() + backoffDelaySeconds(attempts) * 1000)
+            : new Date(),
+          error: errorMessage,
         },
       });
     }
@@ -141,5 +173,6 @@ export async function processRawUpdatesBatch(limit = 100) {
     processed: pendingUpdates.length,
     updatedPackages,
     failed,
+    retried,
   };
 }

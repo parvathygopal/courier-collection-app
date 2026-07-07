@@ -64,14 +64,18 @@ model StatusHistory {
 }
 
 model RawUpdate {
-  id          String   @id @default(uuid())
-  rawData     Json
-  processed   Boolean  @default(false)
-  processedAt DateTime?
-  error       String?
-  createdAt   DateTime @default(now())
+  id            String    @id @default(uuid())
+  rawData       Json
+  processed     Boolean   @default(false)
+  processedAt   DateTime?
+  error         String?
+  attempts      Int       @default(0)
+  maxAttempts   Int       @default(5)
+  nextAttemptAt DateTime  @default(now())
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
-  @@index([processed, createdAt])
+  @@index([processed, nextAttemptAt, createdAt])
   @@map("raw_updates")
 }
 
