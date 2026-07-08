@@ -10,15 +10,13 @@ export const packageStatusSchema = z.enum([
   "CANCELLED",
 ]);
 
-export const rawUpdateItemSchema = z
-  .object({
-    updateId: z.string().min(1).optional(),
-    trackingId: z.string().min(1),
-    status: packageStatusSchema,
-    location: z.string().optional(),
-    timestamp: z.string().datetime().optional(),
-  })
-  .passthrough();
+export const rawUpdateItemSchema = z.object({
+  updateId: z.string().min(1).optional(),
+  trackingId: z.string().min(1),
+  status: packageStatusSchema,
+  location: z.string().optional(),
+  timestamp: z.string().datetime().optional(),
+});
 
 export const rawUpdateBulkSchema = z
   .union([
