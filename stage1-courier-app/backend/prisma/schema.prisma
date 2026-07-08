@@ -17,6 +17,13 @@ enum PackageStatus {
   CANCELLED
 }
 
+enum WebhookOutboxStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
 model Package {
   id                String         @id @default(uuid())
   trackingId        String         @unique
@@ -57,13 +64,53 @@ model StatusHistory {
 }
 
 model RawUpdate {
-  id          String   @id @default(uuid())
-  rawData     Json
-  processed   Boolean  @default(false)
-  processedAt DateTime?
-  error       String?
-  createdAt   DateTime @default(now())
+  id            String    @id @default(uuid())
+  rawData       Json
+  processed     Boolean   @default(false)
+  processedAt   DateTime?
+  error         String?
+  attempts      Int       @default(0)
+  maxAttempts   Int       @default(5)
+  nextAttemptAt DateTime  @default(now())
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
-  @@index([processed, createdAt])
+  @@index([processed, nextAttemptAt, createdAt])
   @@map("raw_updates")
+}
+
+model ProcessedEtlUpdate {
+  updateId    String   @id
+  rawUpdateId String?
+  processedAt DateTime @default(now())
+
+  @@map("processed_etl_updates")
+}
+
+model IntegrationConfig {
+  key                String   @id
+  logisticsWebhookUrl String
+  logisticsApiKey     String
+  isActive            Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@map("integration_configs")
+}
+
+model WebhookOutbox {
+  id            String             @id @default(uuid())
+  trackingId    String             @unique
+  payload       Json
+  status        WebhookOutboxStatus @default(PENDING)
+  attempts      Int                @default(0)
+  maxAttempts   Int                @default(5)
+  nextAttemptAt DateTime           @default(now())
+  processedAt   DateTime?
+  lastError     String?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  @@index([status, nextAttemptAt, createdAt])
+  @@map("webhook_outbox")
 }

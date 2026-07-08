@@ -4,7 +4,9 @@ import dotenv from "dotenv";
 import packageRoutes from "./routes/package.routes";
 import dashboardRoutes from "./routes/dasboard.routes";
 import rawUpdateRoutes from "./routes/raw-update.routes";
+import integrationRoutes from "./routes/integration.routes";
 import { ZodError } from "zod";
+import { AppError } from "./errors/app.error";
 import { ApiResponse } from "./types/api";
 
 dotenv.config();
@@ -45,6 +47,7 @@ app.use(
 // Routes
 app.use("/packages", packageRoutes);
 app.use("/", rawUpdateRoutes);
+app.use("/integrations", integrationRoutes);
 
 // Dashboard: package counts by status
 app.use("/dashboard", dashboardRoutes);
@@ -62,6 +65,14 @@ app.get("/health", (req, res) => {
 // Error handling
 app.use((err: unknown, req: Request, res: Response, next: NextFunction) => {
   console.error(err);
+
+  if (err instanceof AppError) {
+    return res.status(err.statusCode).json({
+      error: err.code,
+      message: err.message,
+      data: null,
+    } as ApiResponse<null>);
+  }
 
   if (err instanceof ZodError) {
     const errors = err.issues.map((issue) => ({

@@ -12,6 +12,7 @@ export const packageStatusSchema = z.enum([
 
 export const rawUpdateItemSchema = z
   .object({
+    updateId: z.string().min(1).optional(),
     trackingId: z.string().min(1),
     status: packageStatusSchema,
     location: z.string().optional(),

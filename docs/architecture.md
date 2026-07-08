@@ -1,488 +1,356 @@
 # Courier Platform Architecture
 
-## Overview
+Version: 1.0
 
-The platform consists of three independent systems:
+## Project Status
 
-1. Courier Collection Application (B2C)
-2. Courier Logistics Application (B2B)
-3. Support System
+| Stage                                    | Status         |
+| ---------------------------------------- | -------------- |
+| Stage 1 – Courier Collection Application | ✅ Completed   |
+| Stage 2 – Courier Logistics Application  | ✅ Completed   |
+| Stage 3 – Integration (Webhook + ETL)    | 🚧 In Progress |
+| Stage 4 – Production Architecture        | 📋 Planned     |
 
-Each system owns its own data and communicates only through APIs.
+Courier Platform Architecture
 
----
+1. Overview
 
-# System Architecture
+The Courier Platform consists of two independent applications that communicate through HTTP APIs.
 
-```text
-Customer
-    |
-    v
-+----------------------+
-| Collection App       |
-| (B2C)                |
-+----------------------+
-    |
-    | Webhook
-    v
-+----------------------+
-| Logistics App        |
-| (B2B)                |
-+----------------------+
-    |
-    | ETL Push
-    v
-+----------------------+
-| Collection App       |
-+----------------------+
+Application Responsibility
+Courier Collection Application (B2C) Customer-facing application where packages are created and tracked.
+Courier Logistics Application (B2B) Internal logistics application responsible for moving packages across regions.
 
-          |
-          v
+Each application owns its own database.
 
-+----------------------+
-| Support System       |
-+----------------------+
-```
+Communication happens only through APIs.
 
----
+2. High Level Architecture
+   Customer
+   |
+   |
+   +-------------------+
+   | Collection App |
+   | (B2C) |
+   +-------------------+
+   |
+   Webhook (Stage 3)
+   |
+   v
+   +-------------------+
+   | Logistics App |
+   | (B2B) |
+   +-------------------+
+   |
+   ETL Push
+   |
+   v
+   +-------------------+
+   | Collection App |
+   +-------------------+
+3. Stage 1 – Courier Collection Application
+   Purpose
 
-# Stage 1
+The Collection Application is the entry point of the courier lifecycle.
 
-## Collection Application
+It is used by:
 
-Responsibilities:
+Customers
+Front office executives
 
-- Create packages
-- Generate tracking IDs
-- Customer package tracking
-- Display simplified status updates
+It is responsible for:
 
-Owns:
+Package creation
+Tracking ID generation
+Customer tracking
+Sale information
+Responsibilities
 
-- Package
-- Tracking History
-- Customer Views
+Implemented:
 
-Does not own:
+Create packages
+Generate Tracking ID
+Store sale details
+Customer tracking page
+Front office dashboard
 
-- Trucks
-- Bags
-- Regions
-- Internal logistics operations
+Does not manage:
 
----
+Bags
+Trucks
+Regions
+Internal logistics routing
+You are acting as the lead software architect for this repository.
 
-# Stage 2
+Before answering, read:
 
-## Logistics Application
+* AGENTS.md
+* ROADMAP.md
+* docs/architecture.md
 
-Responsibilities:
+Treat these documents as the source of truth.
 
-- Region management
-- Bag management
-- Truck management
-- Package movement
-- Package status updates
+Now inspect the entire codebase.
 
-Package Flow:
+Compare the implementation with the roadmap and architecture.
 
-```text
+Produce a report containing:
+
+1. Completed features.
+2. Partially completed features.
+3. Missing features.
+4. Bugs or inconsistencies.
+5. Suggested improvements.
+
+Then create a prioritized implementation plan.
+
+Break the remaining work into tasks of approximately 30–60 minutes each.
+
+For every task provide:
+
+* Goal
+* Files to modify
+* Backend changes
+* Frontend changes
+* Database changes (if any)
+* Acceptance criteria
+* Suggested commit message
+
+Do not generate code until I approve a task.
+
+
+The Logistics Application manages internal package movement.
+
+It is not customer-facing.
+
+Responsibilities
+
+Implemented:
+
+Region Management
+Package Management
+Bag Management
+Truck Management
+Package → Bag Assignment
+Bag → Truck Assignment
+Package Status Updates
+Dashboard APIs
+Package Flow
 Package
-   |
-   v
+│
+▼
 Bag
-   |
-   v
+│
+▼
 Truck
-```
-
-Status Flow:
-
-```text
+Status Flow
 TO_BE_PICKED_UP
-↓
+│
+▼
 PICKED_UP
-↓
+│
+▼
 ADDED_TO_BAG
-↓
+│
+▼
 EN_ROUTE
-↓
+│
+▼
 ARRIVED_AT_REGION
-↓
+│
+▼
 SCHEDULED_FOR_DELIVERY
-↓
+│
+▼
 OUT_FOR_DELIVERY
-```
 
----
+(Use ARRIVED_AT_REGION if that's the actual enum.)
 
-# Stage 3
+Dashboard
 
-## Webhook Integration
+Displays:
 
-Collection Application creates packages.
+Packages waiting to be bagged
+Packages received from incoming trucks
+Packages already loaded onto trucks
+Delayed packages 5. Stage 3 – Application Integration
 
-Logistics Application receives package creation requests through a webhook endpoint.
+Status: Planned / In Progress
 
-Flow:
+This stage integrates the Collection and Logistics applications.
 
-```text
-Collection App
-    |
-    | POST /webhooks/packages
-    |
-    v
-Logistics App
-```
+Webhook Flow
 
-Example Payload:
+When a package is created in Collection:
 
-```json
+Collection
+│
+POST /webhooks/packages
+│
+▼
+Logistics
+
+Example:
+
 {
-  "trackingId": "TRK123",
-  "sourceRegionId": "region-1",
-  "destinationRegionId": "region-2"
+"trackingId": "...",
+"sourceRegionCode": "...",
+"destinationRegionCode": "..."
 }
-```
+Authentication
 
----
+Every webhook request contains:
 
-## Authentication
-
-Every customer receives:
-
-- API Key
-- Signing Secret
-
-Requests contain:
-
-```http
 x-api-key
+x-timestamp
 x-signature
-```
 
 The signature is generated using HMAC SHA256.
 
----
+The Logistics Application validates:
 
-## Idempotency
+API key
+Timestamp
+Signature
 
-The system must reject duplicate package creation requests.
+before processing.
+
+Idempotency
 
 Tracking ID acts as the idempotency key.
 
-Example:
+If the same package is received twice:
 
-```text
-TRK123
-TRK123
-```
+Tracking ID = ABC123
 
-Second request should not create another package.
+↓
 
----
+Already Exists
 
-## Queue Processing
+↓
 
-Webhook requests should not perform heavy processing.
+Ignore Duplicate
+Queue Processing (Future Enhancement)
 
-Flow:
+To prevent heavy webhook processing:
 
-```text
 Webhook
-   |
-   v
+
+↓
+
 Queue
-   |
-   v
+
+↓
+
 Worker
-   |
-   v
+
+↓
+
 Database
-```
 
-Benefits:
+Current implementation processes requests synchronously.
 
-- Prevent overload
-- Retry support
-- Better scalability
+A message queue can be introduced later for scalability.
 
----
+ETL Synchronization
 
-# Stage 4
+The Logistics Application periodically sends package status updates to Collection.
 
-## ETL Synchronization
+Logistics
 
-Logistics Application periodically pushes package updates.
+↓
 
-Flow:
+Raw Status Updates
 
-```text
-Logistics App
-    |
-    | ETL Push
-    v
-Collection App
-```
+↓
 
-Schedule:
+Collection
 
-- Every 4 hours in production
-- Every 1 minute in development
+Development:
 
----
+Every 1 minute
 
-## ETL Payload
+Production:
 
-Logistics system owns detailed information.
+Every 6 hours
+Raw Updates
 
-Example:
+Collection stores:
 
-```json
-{
-  "trackingId": "TRK123",
-  "truckId": "TRK-001",
-  "bagId": "BAG-001",
-  "status": "EN_ROUTE",
-  "eventTime": "2026-01-01T10:00:00Z"
-}
-```
-
-Collection application stores:
-
-- Raw payload
-- Processed payload
-
----
-
-## Raw Update Storage
+Incoming payload
+Processing status
+Timestamp
 
 Purpose:
 
-- Auditing
-- Replay
-- Debugging
-
-Table:
-
-```text
-raw_updates
-```
-
-Columns:
-
-- id
-- payload
-- received_at
-- processed
-- processed_at
-
----
-
-## Transformation Layer
-
-Raw updates are transformed into customer-friendly tracking statuses.
+Auditing
+Replay
+Debugging
+Transformation
 
 Example:
 
-Logistics:
+Internal logistics status:
 
-```text
-Truck sealed
 Loaded to truck
-Arrived at warehouse
-```
 
-Customer View:
+Customer sees:
 
-```text
 Package in transit
-```
 
----
-
-# Retry Strategy
-
-ETL delivery uses exponential backoff.
-
-Example:
-
-```text
-10 seconds
-20 seconds
-40 seconds
-80 seconds
-120 seconds
-```
-
-Maximum retry count:
-
-```text
-5
-```
-
-After that:
-
-```text
-FAILED
-```
-
-Customer is notified.
-
----
-
-# Offset Tracking
-
-ETL jobs must track successful deliveries.
-
-Store:
-
-```text
-lastSuccessfulOffset
-```
-
-or
-
-```text
-lastSuccessfulTimestamp
-```
-
-Purpose:
-
-- Avoid data loss
-- Replay failed batches
-
----
-
-# Customer Validation
-
-Before ETL push:
-
-Validate:
-
-- Customer active
-- API key valid
-- Endpoint reachable
-
-If customer continuously fails:
-
-```text
-ACTIVE
-↓
-WARNING
-↓
-DISABLED
-```
-
-Notifications are sent automatically.
-
----
-
-# Support System
-
-Support users receive read-only access.
-
-Responsibilities:
-
-- Package investigation
-- Delay analysis
-- Refund support
-- Escalations
-
-Support users must not:
-
-- Modify package status
-- Create packages
-- Update logistics data
-
----
-
-# Security
-
-Never expose:
-
-- Internal truck identifiers
-- Internal warehouse identifiers
-- Infrastructure topology
-- Database information
-
-Customer APIs should expose only:
-
-```json
-{
-  "trackingId": "TRK123",
-  "status": "EN_ROUTE"
-}
-```
-
----
-
-# AWS Future Architecture
-
-Possible services:
-
-API Layer:
-
-- API Gateway
-
-Application Layer:
-
-- ECS
-- EKS
-
-Queue:
-
-- SQS
-
-Notifications:
-
-- SNS
-
-Database:
-
-- RDS PostgreSQL
-
-Object Storage:
-
-- S3
-
-Monitoring:
-
-- CloudWatch
-
-Secrets:
-
-- Secrets Manager
-
----
-
-# Non Functional Requirements
-
-Reliability:
-
-- Idempotency
-- Retry support
-- Audit trail
-
-Scalability:
-
-- Horizontal scaling
-- Queue based processing
-
-Security:
-
-- API Keys
-- HMAC Signatures
-- Environment based secrets
-
-Observability:
-
-- Logs
-- Metrics
-- Tracing
-
-Maintainability:
-
-- Controller / Service architecture
-- Prisma data layer
-- Standardized error handling
+This allows internal operational details to remain hidden.
+
+6. Security
+
+The Collection Application should never expose:
+
+Truck IDs
+Bag IDs
+Internal warehouse identifiers
+Internal routing information
+
+Only simplified customer statuses are returned.
+
+7. Future Enhancements
+
+These are not part of the current implementation but can be introduced for production deployment.
+
+Reliability
+Retry mechanism
+Exponential backoff
+Dead Letter Queue
+Offset tracking
+Scalability
+Queue-based webhook processing
+Horizontal scaling
+Worker processes
+Cloud Deployment (AWS)
+
+Possible managed services:
+
+Requirement AWS Service
+Containers ECS
+Database RDS PostgreSQL
+Queue SQS
+Notifications SNS
+Object Storage S3
+Monitoring CloudWatch
+Secrets Secrets Manager 8. Non-Functional Requirements
+Reliability
+Idempotency
+Audit trail
+Retry support
+Security
+API Keys
+HMAC Signatures
+Environment-based secrets
+Scalability
+Stateless APIs
+Queue-based processing
+Independent services
+Maintainability
+Controller → Service architecture
+Prisma ORM
+Standardized error handling
+Zod validation
+Modular project structure

@@ -1,8 +1,6 @@
-import React from "react";
 import { useParams } from "react-router-dom";
 import { usePackage } from "../../hooks/usePackages";
 import { usePackageHistory } from "../../hooks/usePackageHistory";
-import { useUpdateStatus } from "../../hooks/useUpdateStatus";
 
 export default function PackageDetails() {
   const { trackingId } = useParams();
@@ -57,10 +55,6 @@ export default function PackageDetails() {
         <div className="mt-6">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-lg font-semibold">History</h2>
-            <StatusUpdater
-              trackingId={data.trackingId}
-              initialLocation={data.currentLocation}
-            />
           </div>
 
           <PackageHistory trackingId={data.trackingId} />
@@ -97,38 +91,5 @@ function PackageHistory({ trackingId }: { trackingId: string }) {
   );
 }
 
-function StatusUpdater({
-  trackingId,
-  initialLocation,
-}: {
-  trackingId: string;
-  initialLocation: string;
-}) {
-  const mutation = useUpdateStatus(trackingId);
-  const loading = mutation.status === "pending";
-  const [location, setLocation] = React.useState<string>(initialLocation);
-  const doUpdate = () => {
-    mutation.mutate(location);
-  };
 
-  return (
-    <div className="flex items-center gap-3">
-      <input
-        value={location}
-        placeholder={"Current Location"}
-        onChange={(e) => setLocation(e.target.value)}
-        className="rounded-md border border-gray-200 p-2 text-sm"
-      />
 
-      <button className="btn btn-primary" onClick={doUpdate} disabled={loading}>
-        {loading ? "Updating…" : "Apply"}
-      </button>
-
-      {mutation.isError && (
-        <div className="text-red-600 text-sm mt-2">
-          Failed to update status.
-        </div>
-      )}
-    </div>
-  );
-}
