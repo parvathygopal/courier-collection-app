@@ -303,6 +303,81 @@ function mapLocationForStage1(
   return destinationCode;
 }
 
+async function performEtlPush(
+  url: string,
+  payload: any,
+  apiKey: string,
+  secret: string,
+) {
+  const rawBody = JSON.stringify(payload);
+  const timestamp = Date.now().toString();
+  const signature = signRawBody(rawBody, timestamp, secret);
+
+  const headers: Record<string, string> = {
+    "content-type": "application/json",
+    "x-api-key": apiKey,
+    "x-timestamp": timestamp,
+    "x-signature": signature,
+  };
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers,
+    body: rawBody,
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    throw new AppError(
+      "ETL_PUSH_FAILED",
+      `Failed to push updates to Stage 1: ${response.status} ${errorBody}`,
+      response.status,
+    );
+  }
+
+  return response;
+}
+
+function getExponentialBackoffDelay(attempt: number): number {
+  const baseDelay = 1000;
+  const maxDelay = 10000;
+  const delay = baseDelay * Math.pow(2, attempt);
+  return Math.min(delay, maxDelay);
+}
+
+async function pushWithRetry(
+  url: string,
+  payload: any,
+  apiKey: string,
+  secret: string,
+  maxAttempts: number = 3,
+): Promise<void> {
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      await performEtlPush(url, payload, apiKey, secret);
+      return;
+    } catch (error) {
+      lastError = error as Error;
+      const isLastAttempt = attempt === maxAttempts - 1;
+
+      if (isLastAttempt) {
+        throw lastError;
+      }
+
+      const delay = getExponentialBackoffDelay(attempt);
+      // eslint-disable-next-line no-console
+      console.log(
+        `[ETL] Retry attempt ${attempt + 1}/${maxAttempts - 1} after ${delay}ms`,
+      );
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  }
+
+  throw lastError || new Error("ETL push failed after all retries");
+}
+
 export async function pushStatusUpdatesToStage1() {
   const stage1RawUpdatesUrl = process.env.STAGE1_RAW_UPDATES_URL;
 
@@ -359,44 +434,18 @@ export async function pushStatusUpdatesToStage1() {
     })),
   };
 
-  const stage2ApiKey =
-    process.env.STAGE1_RAW_UPDATES_API_KEY ??
-    process.env.STAGE1_RAW_UPDATES_API_KEY;
-  const stage2Secret = process.env.STAGE1_SIGNING_SECRET;
+  const stage1ApiKey = process.env.STAGE1_RAW_UPDATES_API_KEY;
+  const stage1Secret = process.env.STAGE1_SIGNING_SECRET;
 
-  if (!stage2ApiKey || !stage2Secret) {
+  if (!stage1ApiKey || !stage1Secret) {
     throw new AppError(
       "ETL_AUTH_NOT_CONFIGURED",
-      "Stage 2 to Stage 1 auth config missing",
+      "Stage 1 ETL auth config missing",
       500,
     );
   }
 
-  const rawBody = JSON.stringify(payload);
-  const timestamp = Date.now().toString();
-  const signature = signRawBody(rawBody, timestamp, stage2Secret);
-
-  const headers: Record<string, string> = {
-    "content-type": "application/json",
-    "x-api-key": stage2ApiKey,
-    "x-timestamp": timestamp,
-    "x-signature": signature,
-  };
-
-  const response = await fetch(stage1RawUpdatesUrl, {
-    method: "POST",
-    headers,
-    body: rawBody,
-  });
-
-  if (!response.ok) {
-    const errorBody = await response.text();
-    throw new AppError(
-      "ETL_PUSH_FAILED",
-      `Failed to push updates to Stage 1: ${response.status} ${errorBody}`,
-      502,
-    );
-  }
+  await pushWithRetry(stage1RawUpdatesUrl, payload, stage1ApiKey, stage1Secret);
 
   const lastUpdate = updates[updates.length - 1];
   if (!lastUpdate) {
