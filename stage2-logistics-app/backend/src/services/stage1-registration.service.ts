@@ -6,7 +6,9 @@ export async function registerWithStage1(): Promise<void> {
     "/raw-updates",
     "",
   );
-  const logisticsWebhookUrl = `http://localhost:${process.env.PORT}/webhooks/packages`;
+  const logisticsWebhookUrl =
+    process.env.LOGISTICS_WEBHOOK_PUBLIC_URL ||
+    `http://localhost:${process.env.PORT}/webhooks/packages`;
   const logisticsApiKey = process.env.STAGE1_RAW_UPDATES_API_KEY;
 
   if (!stage1BaseUrl || !logisticsApiKey) {
