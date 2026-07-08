@@ -79,6 +79,14 @@ model RawUpdate {
   @@map("raw_updates")
 }
 
+model ProcessedEtlUpdate {
+  updateId    String   @id
+  rawUpdateId String?
+  processedAt DateTime @default(now())
+
+  @@map("processed_etl_updates")
+}
+
 model IntegrationConfig {
   key                String   @id
   logisticsWebhookUrl String

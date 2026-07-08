@@ -254,7 +254,34 @@ const STAGE1_STATUS_MAP: Record<string, string> = {
   OUT_FOR_DELIVERY: "OUT_FOR_DELIVERY",
 };
 
-let lastSuccessfulPushAt = new Date(Date.now() - 6 * 60 * 60 * 1000);
+const ETL_PUSH_OFFSET_KEY = "stage1_push";
+const DEFAULT_ETL_LOOKBACK_MS = 6 * 60 * 60 * 1000;
+
+async function getLastSuccessfulPushAt() {
+  const offset = await prisma.etlPushOffset.findUnique({
+    where: { key: ETL_PUSH_OFFSET_KEY },
+    select: { lastPushedAt: true },
+  });
+
+  if (offset) {
+    return offset.lastPushedAt;
+  }
+
+  return new Date(Date.now() - DEFAULT_ETL_LOOKBACK_MS);
+}
+
+async function setLastSuccessfulPushAt(lastPushedAt: Date) {
+  await prisma.etlPushOffset.upsert({
+    where: { key: ETL_PUSH_OFFSET_KEY },
+    create: {
+      key: ETL_PUSH_OFFSET_KEY,
+      lastPushedAt,
+    },
+    update: {
+      lastPushedAt,
+    },
+  });
+}
 
 function mapLocationForStage1(
   status: string,
@@ -286,6 +313,8 @@ export async function pushStatusUpdatesToStage1() {
       reason: "STAGE1_RAW_UPDATES_URL is not configured",
     };
   }
+
+  const lastSuccessfulPushAt = await getLastSuccessfulPushAt();
 
   const updates = await prisma.packageHistory.findMany({
     where: {
@@ -378,7 +407,7 @@ export async function pushStatusUpdatesToStage1() {
     };
   }
 
-  lastSuccessfulPushAt = lastUpdate.createdAt;
+  await setLastSuccessfulPushAt(lastUpdate.createdAt);
 
   return {
     sent: updates.length,

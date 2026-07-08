@@ -117,4 +117,9 @@ model WebhookPackageQueue {
   @@index([status, nextAttemptAt, createdAt])
 }
 
+model EtlPushOffset {
+  key          String   @id
+  lastPushedAt DateTime
+  updatedAt    DateTime @updatedAt
+}
 
