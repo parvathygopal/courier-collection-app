@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "PackageStatus" ADD VALUE 'DELIVERED' AFTER 'OUT_FOR_DELIVERY';

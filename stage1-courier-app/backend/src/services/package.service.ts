@@ -57,12 +57,15 @@ export async function updatePackageStatusByTrackingId(
     throw AppError.notFound("Package not found");
   }
 
-  let newStatus: "CREATED" | "IN_TRANSIT" | "DELIVERED";
+  let newStatus: "CREATED" | "IN_TRANSIT" | "DELIVERED" | "OUT_FOR_DELIVERY";
   switch (packageData.currentStatus) {
     case "CREATED":
       newStatus = "IN_TRANSIT";
       break;
     case "IN_TRANSIT":
+      newStatus = "DELIVERED";
+      break;
+    case "OUT_FOR_DELIVERY":
       newStatus = "DELIVERED";
       break;
     case "DELIVERED":

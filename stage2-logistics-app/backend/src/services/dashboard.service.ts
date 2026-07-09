@@ -32,7 +32,9 @@ export async function getDashboardStats() {
 
   const delivered = await prisma.package.count({
     where: {
-      currentStatus: "OUT_FOR_DELIVERY",
+      currentStatus: {
+        in: ["OUT_FOR_DELIVERY", "DELIVERED"],
+      },
     },
   });
 

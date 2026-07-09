@@ -14,7 +14,8 @@ const STATUS_TRANSITIONS = {
   EN_ROUTE: "ARRIVED",
   ARRIVED: "SCHEDULED_FOR_DELIVERY",
   SCHEDULED_FOR_DELIVERY: "OUT_FOR_DELIVERY",
-  OUT_FOR_DELIVERY: null,
+  OUT_FOR_DELIVERY: "DELIVERED",
+  DELIVERED: null,
 } as const;
 
 async function addPackageHistory(packageId: string, status: string) {
@@ -252,6 +253,7 @@ const STAGE1_STATUS_MAP: Record<string, string> = {
   ARRIVED: "IN_TRANSIT",
   SCHEDULED_FOR_DELIVERY: "OUT_FOR_DELIVERY",
   OUT_FOR_DELIVERY: "OUT_FOR_DELIVERY",
+  DELIVERED: "DELIVERED",
 };
 
 const ETL_PUSH_OFFSET_KEY = "stage1_push";
