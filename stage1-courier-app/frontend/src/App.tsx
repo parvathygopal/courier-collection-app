@@ -2,21 +2,34 @@ import { NavLink, Outlet } from "react-router-dom";
 
 function App() {
   const linkClass = (isActive: boolean) =>
-    `px-3 py-2 rounded-md text-sm font-medium ${
-      isActive ? "bg-indigo-600 text-white" : "text-gray-700 hover:bg-gray-100"
+    `px-4 py-2 rounded-lg text-sm font-medium transition ${
+      isActive
+        ? "bg-indigo-600 text-white shadow-sm"
+        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
     }`;
 
   return (
-    <div className="container">
-      <header className="flex items-center justify-between py-4">
-        <div className="flex items-center gap-4">
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white border-b border-gray-200 shadow-sm">
+        <div className="max-w-7xl mx-auto flex items-center justify-between h-16 px-6">
+          {/* Logo */}
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold">
-              C
+            <div className="h-10 w-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold text-lg">
+              📦
             </div>
-            <h2 className="text-lg font-bold">Courier</h2>
+
+            <div>
+              <h1 className="text-lg font-bold text-gray-800">
+                Courier Collection
+              </h1>
+              <p className="text-xs text-gray-500">
+                Package Management
+              </p>
+            </div>
           </div>
 
+          {/* Navigation */}
           <nav className="hidden md:flex items-center gap-2">
             <NavLink
               to="/"
@@ -25,37 +38,36 @@ function App() {
             >
               Dashboard
             </NavLink>
+
             <NavLink
               to="/packages"
               className={({ isActive }) => linkClass(isActive)}
             >
               Packages
             </NavLink>
+
             <NavLink
               to="/packages/new"
               className={({ isActive }) => linkClass(isActive)}
             >
-              Create Package
+              + Create Package
             </NavLink>
           </nav>
-        </div>
 
-        <div className="md:hidden">
+          {/* Mobile */}
           <button
             aria-label="Open menu"
-            className="p-2 rounded-md hover:bg-gray-100"
-            onClick={() =>
-              alert("Use larger screen to navigate or implement a mobile menu")
-            }
+            className="md:hidden p-2 rounded-lg hover:bg-gray-100"
           >
             ☰
           </button>
         </div>
       </header>
 
-      <div className="mb-6 border-b border-gray-200" />
-
-      <Outlet />
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-6 py-8">
+        <Outlet />
+      </main>
     </div>
   );
 }

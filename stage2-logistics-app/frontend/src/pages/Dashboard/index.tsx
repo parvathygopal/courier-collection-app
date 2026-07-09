@@ -10,43 +10,49 @@ function SectionCard({
   packages: Package[];
 }) {
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-4">
-      <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-base font-semibold text-gray-800">{title}</h3>
-        <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-700">
+    <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-5">
+      <div className="mb-5 flex items-center justify-between">
+        <h3 className="text-lg font-semibold text-gray-800">{title}</h3>
+
+        <span className="rounded-full bg-indigo-100 px-3 py-1 text-sm font-semibold text-indigo-700">
           {packages.length}
         </span>
       </div>
 
       {packages.length === 0 ? (
-        <div className="text-sm text-gray-500">
-          No packages in this section.
+        <div className="rounded-lg border border-dashed border-gray-300 py-8 text-center text-sm text-gray-500">
+          No packages available.
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-3">
           {packages.slice(0, 10).map((pkg) => (
             <div
               key={pkg.id}
-              className="flex items-center justify-between rounded-md border border-gray-100 p-2"
+              className="rounded-lg border border-gray-100 bg-gray-50 p-4 transition hover:shadow-sm"
             >
-              <div>
-                <div className="text-sm font-medium text-gray-800">
-                  {pkg.trackingId}
+              <div className="flex justify-between items-start">
+                <div>
+                  <div className="font-semibold text-gray-800">
+                    {pkg.trackingId}
+                  </div>
+
+                  <div className="mt-1 text-sm text-gray-500">
+                    {pkg.sourceRegion.code} → {pkg.destinationRegion.code}
+                  </div>
                 </div>
-                <div className="text-xs text-gray-500">
-                  {pkg.sourceRegion.code} → {pkg.destinationRegion.code}
-                </div>
-              </div>
-              <div className="text-right">
-                <span
-                  className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-semibold ${statusClass(
-                    pkg.currentStatus,
-                  )}`}
-                >
-                  {formatStatus(pkg.currentStatus)}
-                </span>
-                <div className="mt-1 text-xs text-gray-400">
-                  {new Date(pkg.createdAt).toLocaleString()}
+
+                <div className="text-right">
+                  <span
+                    className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${statusClass(
+                      pkg.currentStatus
+                    )}`}
+                  >
+                    {formatStatus(pkg.currentStatus)}
+                  </span>
+
+                  <div className="mt-2 text-xs text-gray-400">
+                    {new Date(pkg.createdAt).toLocaleString()}
+                  </div>
                 </div>
               </div>
             </div>
@@ -61,72 +67,89 @@ export default function Dashboard() {
   const { data, isLoading } = useDashboard();
 
   return (
-    <div className="container">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold">Dashboard</h1>
+    <main className="max-w-7xl mx-auto p-6">
+  
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-800">
+          Logistics Dashboard
+        </h1>
+  
+        <p className="mt-2 text-gray-500">
+          Monitor package movement across the logistics network.
+        </p>
       </div>
-
-      <div className="card">
-        {isLoading || !data ? (
-          <div className="loader">Loading dashboard…</div>
-        ) : (
-          <div className="space-y-6">
-            <nav className="flex flex-wrap gap-4">
-              <div className="p-4 rounded-lg shadow-sm bg-white w-44">
-                <div className="text-sm text-gray-500">Total Packages</div>
-                <div className="mt-2 text-xl font-semibold text-gray-800">
-                  {data.totalPackages ?? 0}
-                </div>
+  
+      {isLoading || !data ? (
+        <div className="rounded-xl bg-white shadow-sm p-12 text-center text-gray-500">
+          Loading dashboard...
+        </div>
+      ) : (
+        <>
+          <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4 mb-8">
+  
+            <div className="rounded-xl bg-white shadow-sm border p-5">
+              <div className="text-sm text-gray-500">Total Packages</div>
+              <div className="mt-3 text-3xl font-bold text-indigo-600">
+                {data.totalPackages}
               </div>
-
-              <div className="p-4 rounded-lg shadow-sm bg-white w-44">
-                <div className="text-sm text-gray-500">Created</div>
-                <div className="mt-2 text-xl font-semibold text-gray-800">
-                  {data.created ?? 0}
-                </div>
-              </div>
-
-              <div className="p-4 rounded-lg shadow-sm bg-white w-44">
-                <div className="text-sm text-gray-500">In Transit</div>
-                <div className="mt-2 text-xl font-semibold text-gray-800">
-                  {data.inTransit ?? 0}
-                </div>
-              </div>
-
-              <div className="p-4 rounded-lg shadow-sm bg-white w-44">
-                <div className="text-sm text-gray-500">Out For Delivery</div>
-                <div className="mt-2 text-xl font-semibold text-gray-800">
-                  {data.delivered ?? 0}
-                </div>
-              </div>
-            </nav>
-
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-              <SectionCard
-                title="Yet to be bagged (Morning to Noon)"
-                packages={data.sections.waitingToBeBagged.morningToNoon}
-              />
-              <SectionCard
-                title="Yet to be bagged (Noon to Evening)"
-                packages={data.sections.waitingToBeBagged.noonToEvening}
-              />
-              <SectionCard
-                title="Last truck arrival: yet to be bagged"
-                packages={data.sections.fromLastTruckArrivalYetToBeBagged}
-              />
-              <SectionCard
-                title="Bagged and loaded on trucks"
-                packages={data.sections.baggedLoadedToTrucks}
-              />
             </div>
-
+  
+            <div className="rounded-xl bg-white shadow-sm border p-5">
+              <div className="text-sm text-gray-500">Created</div>
+              <div className="mt-3 text-3xl font-bold text-blue-600">
+                {data.created}
+              </div>
+            </div>
+  
+            <div className="rounded-xl bg-white shadow-sm border p-5">
+              <div className="text-sm text-gray-500">In Transit</div>
+              <div className="mt-3 text-3xl font-bold text-amber-600">
+                {data.inTransit}
+              </div>
+            </div>
+  
+            <div className="rounded-xl bg-white shadow-sm border p-5">
+              <div className="text-sm text-gray-500">Out For Delivery</div>
+              <div className="mt-3 text-3xl font-bold text-green-600">
+                {data.delivered}
+              </div>
+            </div>
+  
+          </div>
+  
+          <div className="grid gap-6 lg:grid-cols-2">
+  
             <SectionCard
-              title="Delayed packages"
+              title="Yet to be bagged (Morning to Noon)"
+              packages={data.sections.waitingToBeBagged.morningToNoon}
+            />
+  
+            <SectionCard
+              title="Yet to be bagged (Noon to Evening)"
+              packages={data.sections.waitingToBeBagged.noonToEvening}
+            />
+  
+            <SectionCard
+              title="Last Truck Arrival"
+              packages={data.sections.fromLastTruckArrivalYetToBeBagged}
+            />
+  
+            <SectionCard
+              title="Bagged & Loaded"
+              packages={data.sections.baggedLoadedToTrucks}
+            />
+  
+          </div>
+  
+          <div className="mt-6">
+            <SectionCard
+              title="Delayed Packages"
               packages={data.sections.delayedPackages}
             />
           </div>
-        )}
-      </div>
-    </div>
+        </>
+      )}
+  
+    </main>
   );
 }

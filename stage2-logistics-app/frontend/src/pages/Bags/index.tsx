@@ -20,13 +20,36 @@ export default function Bags() {
         </button>
       </div>
 
-      <ul>
-        {bags.map((b: any) => (
-          <li key={b.id} className="mb-2">
-            {b.bagCode} — {b.id}
-          </li>
-        ))}
-      </ul>
+      <div className="grid gap-4">
+  {bags.map((bag) => (
+    <div
+      key={bag.id}
+      className="rounded-xl border bg-white shadow-sm p-5"
+    >
+      <div className="flex justify-between">
+        <h2 className="font-semibold text-lg">
+          📦 {bag.bagCode}
+        </h2>
+
+        <span className="text-sm text-gray-500">
+          {bag.packages?.length ?? 0} Packages
+        </span>
+      </div>
+
+      <div className="mt-4 text-sm text-gray-600 space-y-1">
+        <p>
+          <strong>Truck:</strong>{" "}
+          {bag.truck?.registrationNumber ?? "Not Assigned"}
+        </p>
+
+        <p>
+          <strong>Created:</strong>{" "}
+          {new Date(bag.createdAt).toLocaleDateString()}
+        </p>
+      </div>
+    </div>
+  ))}
+</div>
     </div>
   );
 }
