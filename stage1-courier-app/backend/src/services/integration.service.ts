@@ -3,8 +3,15 @@ import { UpsertLogisticsWebhookConfigInput } from "../validators/integration.val
 
 const LOGISTICS_WEBHOOK_CONFIG_KEY = "logistics_webhook";
 
+function maskApiKey(apiKey: string | null): string | null {
+  if (!apiKey || apiKey.length < 4) {
+    return "****";
+  }
+  return "****" + apiKey.slice(-4);
+}
+
 export async function getLogisticsWebhookConfig() {
-  return prisma.integrationConfig.findUnique({
+  const config = await prisma.integrationConfig.findUnique({
     where: {
       key: LOGISTICS_WEBHOOK_CONFIG_KEY,
     },
@@ -15,6 +22,15 @@ export async function getLogisticsWebhookConfig() {
       updatedAt: true,
     },
   });
+
+  if (!config) {
+    return null;
+  }
+
+  return {
+    ...config,
+    logisticsApiKey: maskApiKey(config.logisticsApiKey),
+  };
 }
 
 export async function upsertLogisticsWebhookConfig(

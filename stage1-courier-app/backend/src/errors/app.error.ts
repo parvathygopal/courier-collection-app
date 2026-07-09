@@ -27,4 +27,8 @@ export class AppError extends Error {
   static internal(message = "Internal server error") {
     return new AppError("INTERNAL_ERROR", message, 500);
   }
+
+  static unauthorized(message = "Unauthorized") {
+    return new AppError("UNAUTHORIZED", message, 401);
+  }
 }
