@@ -1,7 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "../config/prisma";
 import { signRawBody } from "../security/hmac";
-import { getLogisticsWebhookConfig } from "./integration.service";
+import { getLogisticsWebhookConfigInternal } from "./integration.service";
 
 type Stage2WebhookPayload = {
   trackingId: string;
@@ -15,7 +15,7 @@ type Stage2WebhookPayload = {
 let outboxIntervalRef: NodeJS.Timeout | null = null;
 
 async function resolveWebhookDestinationConfig() {
-  const registration = await getLogisticsWebhookConfig();
+  const registration = await getLogisticsWebhookConfigInternal();
 
   if (registration?.isActive) {
     return {

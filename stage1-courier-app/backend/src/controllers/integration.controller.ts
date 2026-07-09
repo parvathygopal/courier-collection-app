@@ -5,6 +5,13 @@ import {
 } from "../services/integration.service";
 import { UpsertLogisticsWebhookConfigInput } from "../validators/integration.validator";
 
+function maskApiKey(apiKey: string | null): string | null {
+  if (!apiKey || apiKey.length < 4) {
+    return "****";
+  }
+  return "****" + apiKey.slice(-4);
+}
+
 export async function getLogisticsWebhookRegistration(
   req: Request,
   res: Response,
@@ -35,7 +42,10 @@ export async function putLogisticsWebhookRegistration(
     return res.status(200).json({
       success: true,
       message: "Logistics webhook registration saved",
-      data: updated,
+      data: {
+        ...updated,
+        logisticsApiKey: maskApiKey(updated.logisticsApiKey),
+      },
     });
   } catch (error) {
     return next(error as Error);

@@ -10,7 +10,7 @@ function maskApiKey(apiKey: string | null): string | null {
   return "****" + apiKey.slice(-4);
 }
 
-export async function getLogisticsWebhookConfig() {
+export async function getLogisticsWebhookConfigInternal() {
   const config = await prisma.integrationConfig.findUnique({
     where: {
       key: LOGISTICS_WEBHOOK_CONFIG_KEY,
@@ -22,6 +22,12 @@ export async function getLogisticsWebhookConfig() {
       updatedAt: true,
     },
   });
+
+  return config;
+}
+
+export async function getLogisticsWebhookConfig() {
+  const config = await getLogisticsWebhookConfigInternal();
 
   if (!config) {
     return null;
