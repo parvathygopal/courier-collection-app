@@ -17,6 +17,12 @@ export async function createPackage(data: PackageCreateInput) {
       destinationRegion: data.destinationRegion,
       weight: data.weight,
       currentLocation: data.currentLocation ?? "",
+      statusHistory: {
+        create: {
+          status: "CREATED",
+          location: "",
+        },
+      },
     },
   });
 
