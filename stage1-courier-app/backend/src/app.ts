@@ -5,6 +5,7 @@ import packageRoutes from "./routes/package.routes";
 import dashboardRoutes from "./routes/dasboard.routes";
 import rawUpdateRoutes from "./routes/raw-update.routes";
 import integrationRoutes from "./routes/integration.routes";
+import publicRoutes from "./routes/public.routes";
 import { ZodError } from "zod";
 import { AppError } from "./errors/app.error";
 import { ApiResponse } from "./types/api";
@@ -28,7 +29,7 @@ const corsOptions: cors.CorsOptions = {
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Captcha-Token"],
   optionsSuccessStatus: 200,
 };
 
@@ -48,6 +49,7 @@ app.use(
 app.use("/packages", packageRoutes);
 app.use("/", rawUpdateRoutes);
 app.use("/integrations", integrationRoutes);
+app.use("/public", publicRoutes);
 
 // Dashboard: package counts by status
 app.use("/dashboard", dashboardRoutes);

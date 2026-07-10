@@ -70,3 +70,44 @@ export const getTrackingHistory = async (req: Request, res: Response, next: Next
     return next(error as Error);
   }
 };
+
+export const getPublicPackageByTrackingId = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const trackingId = Array.isArray(req.params.trackingId)
+      ? req.params.trackingId[0]
+      : req.params.trackingId;
+    const packageData = await getPackageByTrackingId(trackingId as string);
+    if (!packageData) {
+      return res.status(404).json({
+        error: null,
+        message: "Package not found",
+        data: null,
+      });
+    }
+
+    const publicData = {
+      trackingId: packageData.trackingId,
+      currentStatus: packageData.currentStatus,
+      currentLocation: packageData.currentLocation,
+      destinationRegion: packageData.destinationRegion,
+      createdAt: packageData.createdAt,
+      statusHistory: packageData.statusHistory.map((item) => ({
+        status: item.status,
+        location: item.location,
+        timestamp: item.timestamp,
+      })),
+    };
+
+    return res.status(200).json({
+      error: null,
+      message: "Success",
+      data: publicData,
+    });
+  } catch (error) {
+    return next(error as Error);
+  }
+};
