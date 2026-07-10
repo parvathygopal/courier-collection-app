@@ -19,10 +19,39 @@ export interface TrackingHistory {
 }
 
 export interface DashboardData {
-  total: number;
+  totalPackages: number;
   created: number;
   inTransit: number;
   delivered: number;
+  sections: {
+    waitingPickup: Array<{
+      id: string;
+      trackingId: string;
+      sourceRegion: string;
+      destinationRegion: string;
+      currentStatus: string;
+      currentLocation: string;
+      createdAt: string;
+    }>;
+    inTransit: Array<{
+      id: string;
+      trackingId: string;
+      sourceRegion: string;
+      destinationRegion: string;
+      currentStatus: string;
+      currentLocation: string;
+      createdAt: string;
+    }>;
+    delayed: Array<{
+      id: string;
+      trackingId: string;
+      sourceRegion: string;
+      destinationRegion: string;
+      currentStatus: string;
+      currentLocation: string;
+      createdAt: string;
+    }>;
+  };
 }
 
 export interface ApiResponse<T> {
