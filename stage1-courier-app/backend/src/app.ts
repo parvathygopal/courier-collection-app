@@ -8,7 +8,7 @@ import integrationRoutes from "./routes/integration.routes";
 import publicRoutes from "./routes/public.routes";
 import { ZodError } from "zod";
 import { AppError } from "./errors/app.error";
-import { ApiResponse } from "./types/api";
+import { ApiResponse, ErrorPayload } from "./types/api-response";
 
 dotenv.config();
 
@@ -69,8 +69,13 @@ app.use((err: unknown, req: Request, res: Response, next: NextFunction) => {
   console.error(err);
 
   if (err instanceof AppError) {
+    const errorPayload: ErrorPayload = {
+      code: err.code,
+      message: err.message,
+      statusCode: err.statusCode,
+    };
     return res.status(err.statusCode).json({
-      error: err.code,
+      error: errorPayload,
       message: err.message,
       data: null,
     } as ApiResponse<null>);
@@ -81,8 +86,13 @@ app.use((err: unknown, req: Request, res: Response, next: NextFunction) => {
       field: issue.path.join("."),
       message: issue.message,
     }));
+    const errorPayload: ErrorPayload = {
+      code: "VALIDATION_ERROR",
+      message: "Validation failed",
+      statusCode: 400,
+    };
     return res.status(400).json({
-      error: "VALIDATION_ERROR",
+      error: errorPayload,
       message: "Validation failed",
       data: null,
       errors,
@@ -90,8 +100,13 @@ app.use((err: unknown, req: Request, res: Response, next: NextFunction) => {
   }
 
   const message = err instanceof Error ? err.message : String(err);
+  const errorPayload: ErrorPayload = {
+    code: "INTERNAL_ERROR",
+    message: message || "Internal server error",
+    statusCode: 500,
+  };
   return res.status(500).json({
-    error: "INTERNAL_ERROR",
+    error: errorPayload,
     message: message || "Internal server error",
     data: null,
   } as ApiResponse<null>);

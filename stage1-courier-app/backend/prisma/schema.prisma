@@ -25,39 +25,39 @@ enum WebhookOutboxStatus {
 }
 
 model Package {
-  id                String         @id @default(uuid())
-  trackingId        String         @unique
+  id                String        @id @default(uuid())
+  trackingId        String        @unique
   senderAddress     String
   receiverAddress   String
   sourceRegion      String
   destinationRegion String
   weight            Float
-  currentStatus     PackageStatus  @default(CREATED)
+  currentStatus     PackageStatus @default(CREATED)
   currentLocation   String
-  createdAt         DateTime       @default(now())
+  createdAt         DateTime      @default(now())
 
-  sale              Sale?
-  statusHistory     StatusHistory[]
+  sale          Sale?
+  statusHistory StatusHistory[]
 
   @@map("packages")
 }
 
 model Sale {
-  id        String   @id @default(uuid())
-  packageId String   @unique
+  id        String  @id @default(uuid())
+  packageId String  @unique
   amount    Float
-  package   Package  @relation(fields: [packageId], references: [id])
+  package   Package @relation(fields: [packageId], references: [id])
 
   @@map("sales")
 }
 
 model StatusHistory {
-  id         String        @id @default(uuid())
-  packageId  String
-  status     PackageStatus
-  location   String
-  timestamp  DateTime      @default(now())
-  package    Package       @relation(fields: [packageId], references: [id])
+  id        String        @id @default(uuid())
+  packageId String
+  status    PackageStatus
+  location  String
+  timestamp DateTime      @default(now())
+  package   Package       @relation(fields: [packageId], references: [id])
 
   @@index([packageId])
   @@map("status_history")
@@ -88,7 +88,7 @@ model ProcessedEtlUpdate {
 }
 
 model IntegrationConfig {
-  key                String   @id
+  key                 String   @id
   logisticsWebhookUrl String
   logisticsApiKey     String
   isActive            Boolean  @default(true)
@@ -99,17 +99,17 @@ model IntegrationConfig {
 }
 
 model WebhookOutbox {
-  id            String             @id @default(uuid())
-  trackingId    String             @unique
+  id            String              @id @default(uuid())
+  trackingId    String              @unique
   payload       Json
   status        WebhookOutboxStatus @default(PENDING)
-  attempts      Int                @default(0)
-  maxAttempts   Int                @default(5)
-  nextAttemptAt DateTime           @default(now())
+  attempts      Int                 @default(0)
+  maxAttempts   Int                 @default(5)
+  nextAttemptAt DateTime            @default(now())
   processedAt   DateTime?
   lastError     String?
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
 
   @@index([status, nextAttemptAt, createdAt])
   @@map("webhook_outbox")

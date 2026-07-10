@@ -4,6 +4,7 @@ import {
   upsertLogisticsWebhookConfig,
 } from "../services/integration.service";
 import { UpsertLogisticsWebhookConfigInput } from "../validators/integration.validator";
+import { successResponse } from "../types/api-response";
 
 function maskApiKey(apiKey: string | null): string | null {
   if (!apiKey || apiKey.length < 4) {
@@ -21,10 +22,7 @@ export async function getLogisticsWebhookRegistration(
     void req;
     const config = await getLogisticsWebhookConfig();
 
-    return res.status(200).json({
-      success: true,
-      data: config,
-    });
+    return res.status(200).json(successResponse(config, "Logistics webhook config fetched successfully"));
   } catch (error) {
     return next(error as Error);
   }
@@ -39,14 +37,15 @@ export async function putLogisticsWebhookRegistration(
     const payload = req.body as UpsertLogisticsWebhookConfigInput;
     const updated = await upsertLogisticsWebhookConfig(payload);
 
-    return res.status(200).json({
-      success: true,
-      message: "Logistics webhook registration saved",
-      data: {
-        ...updated,
-        logisticsApiKey: maskApiKey(updated.logisticsApiKey),
-      },
-    });
+    return res.status(200).json(
+      successResponse(
+        {
+          ...updated,
+          logisticsApiKey: maskApiKey(updated.logisticsApiKey),
+        },
+        "Logistics webhook registration saved",
+      )
+    );
   } catch (error) {
     return next(error as Error);
   }
