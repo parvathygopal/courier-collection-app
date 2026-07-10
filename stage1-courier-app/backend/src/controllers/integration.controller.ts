@@ -21,10 +21,9 @@ export async function getLogisticsWebhookRegistration(
   try {
     void req;
     const config = await getLogisticsWebhookConfig();
-
-    return res.status(200).json(successResponse(config, "Logistics webhook config fetched successfully"));
+    res.status(200).json(successResponse(config, "Logistics webhook config fetched successfully"));
   } catch (error) {
-    return next(error as Error);
+    next(error as Error);
   }
 }
 
@@ -36,8 +35,7 @@ export async function putLogisticsWebhookRegistration(
   try {
     const payload = req.body as UpsertLogisticsWebhookConfigInput;
     const updated = await upsertLogisticsWebhookConfig(payload);
-
-    return res.status(200).json(
+    res.status(200).json(
       successResponse(
         {
           ...updated,
@@ -47,6 +45,6 @@ export async function putLogisticsWebhookRegistration(
       )
     );
   } catch (error) {
-    return next(error as Error);
+    next(error as Error);
   }
 }

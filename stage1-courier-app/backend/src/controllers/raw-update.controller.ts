@@ -11,9 +11,8 @@ export async function createRawUpdates(
   try {
     const payload = req.body as RawUpdateBulkInput;
     const result = await ingestRawUpdates(payload);
-
-    return res.status(202).json(successResponse(result, "Raw updates ingested successfully"));
+    res.status(202).json(successResponse(result, "Raw updates ingested successfully"));
   } catch (error) {
-    return next(error as Error);
+    next(error as Error);
   }
 }

@@ -6,7 +6,7 @@ export const getDashboard = async (req: Request, res: Response, next: NextFuncti
   try {
     const stats = await getDashboardStats();
     res.status(200).json(successResponse(stats, "Dashboard stats fetched successfully"));
-  } catch (error : unknown) {
+  } catch (error: unknown) {
     next(error);
   }
 };

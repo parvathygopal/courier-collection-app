@@ -5,12 +5,11 @@ import {
   getPackageByTrackingId,
   updatePackageStatusByTrackingId,
 } from "../services/package.service";
-import { successResponse } from "../types/api-response";
+import { successResponse, errorResponse } from "../types/api-response";
 
 export async function create(req: Request, res: Response, next: NextFunction) {
   try {
     const packageData = await createPackage(req.body);
-
     res.status(201).json(successResponse(packageData, "Package created successfully"));
   } catch (error) {
     next(error as Error);
@@ -20,9 +19,9 @@ export async function create(req: Request, res: Response, next: NextFunction) {
 export const getAll = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const packages = await getAllPackages();
-    return res.status(200).json(successResponse(packages, "Packages fetched successfully"));
+    res.status(200).json(successResponse(packages, "Packages fetched successfully"));
   } catch (error) {
-    return next(error as Error);
+    next(error as Error);
   }
 };
 
@@ -33,19 +32,17 @@ export const getByTrackingId = async (req: Request, res: Response, next: NextFun
       : req.params.trackingId;
     const packageData = await getPackageByTrackingId(trackingId as string);
     if (!packageData) {
-      return res.status(404).json({
-        error: {
-          code: "NOT_FOUND",
-          message: "Package not found",
-          statusCode: 404,
-        },
-        message: "Package not found",
-        data: null,
-      });
+      res.status(404).json(
+        errorResponse(
+          { code: "NOT_FOUND", message: "Package not found", statusCode: 404 },
+          "Package not found"
+        )
+      );
+      return;
     }
-    return res.status(200).json(successResponse(packageData, "Package fetched successfully"));
+    res.status(200).json(successResponse(packageData, "Package fetched successfully"));
   } catch (error) {
-    return next(error as Error);
+    next(error as Error);
   }
 };
 
@@ -59,9 +56,9 @@ export const updatePackageStatus = async (req: Request, res: Response, next: Nex
       trackingId as string,
       location,
     );
-    return res.status(200).json(successResponse(updatedPackage, "Package status updated successfully"));
+    res.status(200).json(successResponse(updatedPackage, "Package status updated successfully"));
   } catch (error) {
-    return next(error as Error);
+    next(error as Error);
   }
 };
 
@@ -72,19 +69,17 @@ export const getTrackingHistory = async (req: Request, res: Response, next: Next
       : req.params.trackingId;
     const packageData = await getPackageByTrackingId(trackingId as string);
     if (!packageData) {
-      return res.status(404).json({
-        error: {
-          code: "NOT_FOUND",
-          message: "Package not found",
-          statusCode: 404,
-        },
-        message: "Package not found",
-        data: null,
-      });
+      res.status(404).json(
+        errorResponse(
+          { code: "NOT_FOUND", message: "Package not found", statusCode: 404 },
+          "Package not found"
+        )
+      );
+      return;
     }
-    return res.status(200).json(successResponse(packageData.statusHistory, "Tracking history fetched successfully"));
+    res.status(200).json(successResponse(packageData.statusHistory, "Tracking history fetched successfully"));
   } catch (error) {
-    return next(error as Error);
+    next(error as Error);
   }
 };
 
@@ -99,15 +94,13 @@ export const getPublicPackageByTrackingId = async (
       : req.params.trackingId;
     const packageData = await getPackageByTrackingId(trackingId as string);
     if (!packageData) {
-      return res.status(404).json({
-        error: {
-          code: "NOT_FOUND",
-          message: "Package not found",
-          statusCode: 404,
-        },
-        message: "Package not found",
-        data: null,
-      });
+      res.status(404).json(
+        errorResponse(
+          { code: "NOT_FOUND", message: "Package not found", statusCode: 404 },
+          "Package not found"
+        )
+      );
+      return;
     }
 
     const publicData = {
@@ -123,8 +116,8 @@ export const getPublicPackageByTrackingId = async (
       })),
     };
 
-    return res.status(200).json(successResponse(publicData, "Package fetched successfully"));
+    res.status(200).json(successResponse(publicData, "Package fetched successfully"));
   } catch (error) {
-    return next(error as Error);
+    next(error as Error);
   }
 };
