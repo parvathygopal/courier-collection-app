@@ -1,3 +1,9 @@
+export interface Sale {
+  id: string;
+  packageId: string;
+  amount: number;
+}
+
 export interface Package {
   id: string;
   trackingId: string;
@@ -9,6 +15,7 @@ export interface Package {
   currentStatus: string;
   currentLocation: string;
   createdAt: string;
+  sale?: Sale | null;
 }
 
 export interface TrackingHistory {

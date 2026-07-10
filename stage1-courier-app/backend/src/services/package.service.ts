@@ -23,7 +23,15 @@ export async function createPackage(data: PackageCreateInput) {
           location: "",
         },
       },
+      ...(data.saleAmount && {
+        sale: {
+          create: {
+            amount: data.saleAmount,
+          },
+        },
+      }),
     },
+    include: { sale: true, statusHistory: true },
   });
 
   await enqueueWebhookOutbox({

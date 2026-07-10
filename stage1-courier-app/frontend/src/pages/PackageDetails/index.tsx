@@ -51,6 +51,15 @@ export default function PackageDetails() {
               </span>
             </div>
           </div>
+
+          {data.sale && (
+            <div>
+              <div className="text-sm text-gray-500">Sale Amount</div>
+              <div className="mt-1 text-lg font-medium text-gray-800">
+                ₹{data.sale.amount.toFixed(2)}
+              </div>
+            </div>
+          )}
         </div>
         <div className="mt-6">
           <div className="flex items-center justify-between mb-3">

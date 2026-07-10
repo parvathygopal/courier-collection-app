@@ -7,4 +7,5 @@ export const packageCreateSchema = z.object({
   destinationRegion: z.string().min(1),
   currentLocation: z.string().optional(),
   weight: z.number().positive(),
+  saleAmount: z.number().positive().optional(),
 });

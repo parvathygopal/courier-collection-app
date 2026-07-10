@@ -9,6 +9,7 @@ type FormValues = {
   sourceRegion: string;
   destinationRegion: string;
   weight?: number;
+  saleAmount?: number;
 };
 
 export default function CreatePackage() {
@@ -175,6 +176,23 @@ export default function CreatePackage() {
                   valueAsNumber: true,
                 })}
                 placeholder="e.g. 2.5"
+                className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 outline-none"
+              />
+            </div>
+
+            {/* Sale Amount */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Sale Amount (Optional)
+              </label>
+
+              <input
+                type="number"
+                step="0.01"
+                {...register("saleAmount", {
+                  valueAsNumber: true,
+                })}
+                placeholder="e.g. 999.99"
                 className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 outline-none"
               />
             </div>
