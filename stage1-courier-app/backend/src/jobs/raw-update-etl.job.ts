@@ -38,3 +38,12 @@ export function startRawUpdatesEtlJob() {
     `Raw updates ETL job started (interval: ${intervalMs}ms, batch: ${batchSize})`,
   );
 }
+
+export function stopRawUpdatesEtlJob() {
+  if (!intervalRef) {
+    return;
+  }
+
+  clearInterval(intervalRef);
+  intervalRef = null;
+}
