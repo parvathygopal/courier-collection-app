@@ -39,6 +39,9 @@ export async function assignBagToTruck(truckId: string, bagId: string) {
     where: {
       id: bagId,
     },
+    include: {
+      packages: true,
+    },
   });
 
   if (!bag) {
@@ -49,6 +52,26 @@ export async function assignBagToTruck(truckId: string, bagId: string) {
     throw new AppError(
       "BAG_ALREADY_ASSIGNED",
       "Bag is already assigned to a truck",
+      409,
+    );
+  }
+
+  if (bag.packages.length === 0) {
+    throw new AppError(
+      "EMPTY_BAG",
+      "Cannot assign an empty bag to a truck",
+      409,
+    );
+  }
+
+  const allPackagesAddedToBag = bag.packages.every(
+    (pkg) => pkg.currentStatus === "ADDED_TO_BAG",
+  );
+
+  if (!allPackagesAddedToBag) {
+    throw new AppError(
+      "INVALID_PACKAGE_STATUS",
+      "All packages in the bag must be in ADDED_TO_BAG status",
       409,
     );
   }

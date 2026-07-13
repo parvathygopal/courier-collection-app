@@ -58,6 +58,14 @@ export async function assignPackageToBag(bagId: string, packageId: string) {
     );
   }
 
+  if (pkg.currentStatus !== "PICKED_UP") {
+    throw new AppError(
+      "INVALID_PACKAGE_STATUS",
+      `Package cannot be assigned because it has not been picked up yet. Current status: ${pkg.currentStatus}`,
+      409,
+    );
+  }
+
   return prisma.$transaction(async (tx) => {
     const updatedPackage = await tx.package.update({
       where: {
