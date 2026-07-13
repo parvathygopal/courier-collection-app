@@ -6,4 +6,6 @@ export const QUERY_KEYS = {
   HISTORY: (trackingId: string) => ["history", trackingId] as const,
 
   DASHBOARD: ["dashboard"] as const,
+
+  REGIONS: ["regions"] as const,
 };
