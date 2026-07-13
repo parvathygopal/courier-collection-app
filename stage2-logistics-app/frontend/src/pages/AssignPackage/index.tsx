@@ -1,9 +1,12 @@
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { usePackages } from "../../hooks/usePackages";
 import { useBags } from "../../hooks/useBags";
 import { packageService } from "../../services/package.service";
+import { QUERY_KEYS } from "../../constants/queryKey";
 
 export default function AssignPackage() {
+  const queryClient = useQueryClient();
   const { data: packages = [] } = usePackages();
   const { data: bags = [] } = useBags();
 
@@ -27,6 +30,16 @@ export default function AssignPackage() {
       await packageService.assignPackageToBag(bagId, packageId);
 
       setMessage("Package assigned successfully.");
+
+      await queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.PACKAGES,
+      });
+      await queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.BAGS,
+      });
+      await queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.DASHBOARD,
+      });
 
       setPackageId("");
       setBagId("");

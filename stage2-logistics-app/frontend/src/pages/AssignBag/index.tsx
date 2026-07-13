@@ -1,9 +1,12 @@
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useBags } from "../../hooks/useBags";
 import { useTrucks } from "../../hooks/useTrucks";
 import { truckService } from "../../services/truck.service";
+import { QUERY_KEYS } from "../../constants/queryKey";
 
 export default function AssignBag() {
+  const queryClient = useQueryClient();
   const { data: bags = [] } = useBags();
   const { data: trucks = [] } = useTrucks();
 
@@ -27,6 +30,16 @@ export default function AssignBag() {
       await truckService.assignBagToTruck(truckId, bagId);
 
       setMessage("Bag assigned successfully.");
+
+      await queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.BAGS,
+      });
+      await queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.TRUCKS,
+      });
+      await queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.DASHBOARD,
+      });
 
       setBagId("");
       setTruckId("");
