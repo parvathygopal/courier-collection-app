@@ -15,8 +15,8 @@ interface ApiResponse<T> {
   message: string;
   data: T | null;
 }
-
-const logisticsApiUrl = import.meta.env.VITE_LOGISTICS_API_URL || "http://localhost:3002";
+console.log(import.meta.env.LOGISTICS_URL);
+const logisticsApiUrl = import.meta.env.LOGISTICS_URL || "http://localhost:3000";
 const logisticsApi = axios.create({ baseURL: logisticsApiUrl });
 
 export const regionService = {
