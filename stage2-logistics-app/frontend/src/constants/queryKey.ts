@@ -10,4 +10,5 @@ export const QUERY_KEYS = {
   BAG: (id: string) => ["bag", id] as const,
   TRUCKS: ["trucks"] as const,
   TRUCK: (id: string) => ["truck", id] as const,
+  REGIONS: ["regions"] as const,
 };

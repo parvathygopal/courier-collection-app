@@ -5,6 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 
 import { packageService } from "../../services/package.service";
 import { QUERY_KEYS } from "../../constants/queryKey";
+import { useRegions } from "../../hooks/useRegions";
 
 type FormValues = {
   sourceRegionCode: string;
@@ -22,6 +23,7 @@ export default function CreatePackage() {
 
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { data: regions, isLoading: isLoadingRegions } = useRegions();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
@@ -80,74 +82,92 @@ export default function CreatePackage() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Source Region Code
-            </label>
-
-            <input
-              {...register("sourceRegionCode", {
-                required: "Source region code is required",
-              })}
-              placeholder="e.g. CHN"
-              className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 outline-none transition"
-            />
-
-            {formState.errors.sourceRegionCode && (
-              <p className="mt-2 text-sm text-red-600">
-                {String(formState.errors.sourceRegionCode.message)}
-              </p>
-            )}
+        {isLoadingRegions ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="text-gray-500">Loading regions...</div>
           </div>
+        ) : (
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
 
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Destination Region Code
-            </label>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Source Region
+              </label>
 
-            <input
-              {...register("destinationRegionCode", {
-                required: "Destination region code is required",
-              })}
-              placeholder="e.g. DEL"
-              className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 outline-none transition"
-            />
+              <select
+                {...register("sourceRegionCode", {
+                  required: "Source region is required",
+                })}
+                className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 outline-none transition"
+              >
+                <option value="">Select source region</option>
+                {(regions || []).map((region) => (
+                  <option key={region.id} value={region.code}>
+                    {region.name} ({region.code})
+                  </option>
+                ))}
+              </select>
 
-            {formState.errors.destinationRegionCode && (
-              <p className="mt-2 text-sm text-red-600">
-                {String(formState.errors.destinationRegionCode.message)}
-              </p>
-            )}
-          </div>
-
-          {successMessage && (
-            <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-green-700">
-              ✅ {successMessage}
+              {formState.errors.sourceRegionCode && (
+                <p className="mt-2 text-sm text-red-600">
+                  {String(formState.errors.sourceRegionCode.message)}
+                </p>
+              )}
             </div>
-          )}
 
-          <div className="flex justify-end gap-3">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Destination Region
+              </label>
 
-            <button
-              type="button"
-              onClick={() => navigate(-1)}
-              className="px-5 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 transition"
-            >
-              Cancel
-            </button>
+              <select
+                {...register("destinationRegionCode", {
+                  required: "Destination region is required",
+                })}
+                className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 outline-none transition"
+              >
+                <option value="">Select destination region</option>
+                {(regions || []).map((region) => (
+                  <option key={region.id} value={region.code}>
+                    {region.name} ({region.code})
+                  </option>
+                ))}
+              </select>
 
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="px-6 py-2.5 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition"
-            >
-              {isSubmitting ? "Creating..." : "Create Package"}
-            </button>
+              {formState.errors.destinationRegionCode && (
+                <p className="mt-2 text-sm text-red-600">
+                  {String(formState.errors.destinationRegionCode.message)}
+                </p>
+              )}
+            </div>
 
-          </div>
-        </form>
+            {successMessage && (
+              <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-green-700">
+                ✅ {successMessage}
+              </div>
+            )}
+
+            <div className="flex justify-end gap-3">
+
+              <button
+                type="button"
+                onClick={() => navigate(-1)}
+                className="px-5 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 transition"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="px-6 py-2.5 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition"
+              >
+                {isSubmitting ? "Creating..." : "Create Package"}
+              </button>
+
+            </div>
+          </form>
+        )}
       </div>
     </main>
   );
